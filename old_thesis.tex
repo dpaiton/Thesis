@@ -1,0 +1,618 @@
+\RequirePackage{fix-cm}
+
+%\documentclass{svjour3}                     % onecolumn (standard format)
+%\documentclass[smallcondensed]{svjour3}     % onecolumn (ditto)
+\documentclass[smallextended]{svjour3}       % onecolumn (second format)
+%\documentclass[twocolumn]{svjour3}          % twocolumn
+
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{tabto}
+\usepackage{bbold}
+\usepackage{mathrsfs}
+%\usepackage{latexsym}
+%\usepackage{mathptmx}      % use Times fonts if available on your TeX system
+
+\smartqed  % flush right qed marks, e.g. at end of proof
+
+% Math definitions
+\newcommand{\argmin}{\operatornamewithlimits{argmin}}
+\newcommand{\tightoverset}[2]{\mathop{#2}\limits^{\vbox to -.6ex{\kern-0.75ex\hbox{$#1$}\vss}}}
+%\newcommand{\tab}[1]{%
+%    \settowidth{\tabcont}{#1}
+%    {\makebox[0.15\linewidth][l]{#1}\ignorespaces}
+%}%
+
+% Insert the name of "your journal" with
+\journalname{Thesis}
+
+\begin{document}
+
+\title{An in-depth analysis of the Locally Competitive Algorithm
+%\thanks{Grants or other notes
+%about the article that should go on the front page should be
+%placed here. General acknowledgments should be placed at the end of the article.}
+}
+
+%\subtitle{}
+
+%\titlerunning{Short form of title}        % if too long for running head
+
+\author{Dylan M. Paiton}
+
+
+\authorrunning{DM Paiton}% if too long for running head
+
+
+\institute{DM Paiton \at
+              Vision Science Graduate Group\\
+              Redwood Center for Theoretical Neuroscience\\
+              University of California, Berkeley\\
+              \email{dpaiton@gmail.com}           %  \\
+}
+
+\date{05/27/2019}
+
+\maketitle
+
+\begin{abstract}
+Sparse coding principles have been widely used to model neural responses in the mammalian primary visual cortex. However, much of the computational and physiological literature has focused on understanding neuronal response characteristics in the spatial domain. The additional computational complexity required to build a space-time dependent receptive field model from neuron responses or from modeling the space-time dependent statistics of natural scenes has largely limited the amount of study that could be done in the time domain. However, it is widely believed that neurons encode information both in space and time. Here, we propose a hierarchical space-time sparse coding model for producing maximally efficient codes of video data. This is an extension on prior work in sparse coding, whereby jointly dependent space-time receptive fields will be learned from the statistical structure in videos of natural scenes. The model will require investigation of the processing role of predictive coding, lateral inhibitory competition, and multi-layer networks with recurrent top-down interactions. We will assess the network model by comparing statistical measures of space-time receptive fields against biological measures. We will also compare against neuronal population responses from multi-unit physiologically recorded data. Additionally, we will use the network as a tool for building efficient representations of video data for applications in industry, such as video compression.\\
+\end{abstract}
+
+%%%%%%%%%%%%%%%%%%%%%
+% Thesis Committee
+%%%%%%%%%%%%%%%%%%%%%
+\section{Thesis Committee} \label{committee}
+\noindent This work will be done jointly with Bruno Olshausen. In addition, we will regularly meet and coordinate with my thesis committee, which is composed of:\\
+\NumTabs{4}
+\begin{enumerate}
+    \item
+        Committee Chair:
+        \tab{Bruno Olshausen}
+    \item
+        Inside Member:
+        \tab{Jack Gallant}
+    \item
+        Inside Member:
+        \tab{Stanley Klein}
+    \item
+        Outside Member:
+        \tab{Trevor Darrell}
+\end{enumerate}
+
+%%%%%%%%%%%%%%%%%%%%%
+% Specific Aims
+%%%%%%%%%%%%%%%%%%%%%
+\section{Specific Aims} \label{aims}
+\noindent The proposed research is to develop a hierarchical neural network model for encoding time-varying visual data to gain insight into the neural underpinnings of perception. We propose two measures of success for the model: first is the degree that the model can teach us about neural computation in vision systems and second is to use the model to produce an adaptive, universal video code for solving challenging problems in computational vision.
+
+\subsection{Learning a Complete Spatio-Temporal Code for Natural Scenes} \label{aim1}
+\noindent A majority of models of visual cortical processing are limited to the spatial domain. However, the animal vision systems they are modeling exist and encode information in space and time. Here, we aim to expand upon existing models of cortical processing to develop a novel sparse coding network for modeling the statistics of time-varying natural scenes. The network implements predictive sparse coding, a well accepted theory of computation in the visual cortex \cite{olshausen1997sparse,rao1999predictive}. We will evaluate the success of our model by comparing statistical measures of physiologically recorded space-time receptive fields against what is learned from natural scenes, similar to previous studies on spatial sparse coding models \cite{rehn2007network,zylberberg2011sparse}.
+
+\subsection{Building a Hierarchical Network for Maximally Efficient Representations} \label{aim2}
+\noindent In industry, there is a strong need for statistical models to learn from data without human curated labels because of the considerable expense of generating such labels and the unintended biases that human labeling introduces. However, most deep neural networks, the gold standard in modern day machine learning, are trained in a supervised manner and are predicated on a narrowly specified task, such as labeling certain objects in images or videos. We aim to expand our model to an unsupervised deep network to learn a hierarchical spatio-temporal representation for time-varying visual data. Instead of a narrowly specified task, the primary objective of our model is constructing a general and efficient visual code that can be applied to a myriad of different tasks. In addition to common machine learning challenges, we will validate our work by comparing against population statistics of previously obtained polytrode data recorded from cat primary visual cortex (V1) \cite{zhu2015sparse}. We will also investigate the role of recurrent connections in our network by forcing a small subset of modelled cells to respond exactly as the polytrode recorded cells have to the same visual input. We hypothesize that this will cause the overall network dynamics will converge to a novel and nontrivial state.
+
+\subsection{Creating a Streaming Video Compression Codec} \label{aim3}
+\noindent Current state-of-the-art video coding methods lack biological realism in their representation and are not easily adapted to the various psychophysical nuances of human perception. These coding schemes are based on a priori, ad-hoc methods for encoding video that fail to make a tight connection between the data representation and perceptually relevant dimensions of the data. We hypothesize that the our sparse coding network is a viable model for how the visual system is encoding information and, as such, we believe our code can be better adapted to account for information that the human system does not encode. We propose a perceptual video codec that has graceful signal degradation properties, causal representations, and can easily incorporate currently underutilized knowledge from psychophysical research (e.g. \cite{takeuchi2005sharpening,takeuchi2002motion}). We will assess the quality of our network with psychophysical methods, as opposed to standard statistical measures such as signal-to-noise-ratio.
+
+%%%%%%%%%%%%%%%%%%%%%
+% Background & Significance
+%%%%%%%%%%%%%%%%%%%%%
+\section{Background and Significance} \label{background}
+\noindent The human visual system takes in an enormous amount of visual information as a continuous stream. This information must be assimilated to guide perceptions and actions in environments. In order for this to be possible, the brain creates an exceedingly efficient code of the visual data, in terms of ecological importance per bit of information encoded. Recently, a similarly daunting challenge has arisen in the developed world, where humans are inundated with increasing amounts of visual data from the innovation of mobile and wearable recording devices. As technology continues to advance, the amount of visual data being generated continues to increase exponentially. We believe that there is a common solution to both of these problems, which is the solution already found in biological vision systems. As such, we aim to draw from current theories of cortical visual processing to develop a neural network model that produces a maximally efficient code for natural video data. It is a widely accepted theory that incoming visual data is used to update an internal model of the world, in order to properly assimilate such a large influx of information. This internal model must be inherently spatio-temporal to account for the many sources of time variation.\\
+
+\noindent Beginning in the retina, visual information is encoded as a time-dependent signal. In addition to the time signature created by eye movements themselves, each processing stage in the retina undergoes some form of temporal integration or modulation. Precisely timed spikes are then communicated from retinal ganglion cells to the Lateral Geniculate Nucleus (LGN) of the Thalamus, conveying information about the world. The signal from the LGN is relayed to the cortex, where a massive network of interconnected neurons assimilates the visual signal into our cognitive perception. It is our belief that in order to understand any step along this processing pipeline, it is necessary to model the space-time response characteristics of the computational elements. Because of the increased complexity when including the time dimension, most computational models and physiological recording analyses have focused solely on the spatial domain of visual information. Here, we propose to expand upon existing work in learning a biologically relevant statistical model of time-varying visual information.
+
+\subsection{Building a Deep Spatiotemporal Sparse Coding Network}
+\noindent Sparse coding techniques have been employed to model the high-order statistical structure of sensory inputs \cite{simoncelli2001natural}. This method has been most extensively used to model the responses of visual neurons to static scenes, including classical and non-classical receptive field properties of V1 simple cells \cite{olshausen1996emergence,rehn2007network,zhu2013visual,zylberberg2011sparse}. Previous studies have demonstrated the ability to extend sparse coding models to learn visual spatio-temporal receptive fields \cite{dean2009recursive,olshausen2003learning,haterenhansruderman1998independent,hyvarinen2003bubbles}, although this work has not been compared to physiologically recorded data. Additionally, due to computational restrictions, previous attempts have used simplified approximations to a dynamical sparse coding network that can now be expanded into a truly overcomplete, iterative, generative and causal sparse coding model. In accordance with the notion of causality, if a dataset is comprised of a stream of incoming visual information, as is the case in any animal's ecological setting, then the processing algorithm should not make use of future information to influence current representations. None of the current models for sparse coding of visual scenes are causal, although see \cite{charles2011causal} for a causal network for audio coding. Following the dynamic coding framework in \cite{rozell2008sparse}, we aim to develop a neural network that infers sparse coefficients from time-varying data and learns to produce a rich and adaptive code for natural scenes. Following well-established theories of neural computation, our model will be predictive \cite{rao1999predictive} in space and time, and will use temporal coherence \cite{hyvarinen2003bubbles} as a helpful signal. We aim to maximize the efficiency of the visual code produced by extending the model into a deep, hierarchical, group sparse coding network \cite{paiton2015deconvolutional,cadieu2008learning,le2013building}, which can then be applied to a variety of machine learning tasks (e.g. \cite{dean2009recursive,porikli2010compressed,shan2005cross}).
+
+\subsection{Predicting Neural Responses to Video Stimuli}
+\noindent A number of studies have compared spatial receptive fields derived from single unit recordings of mammalian cortex against those learned by sparse coding models \cite{olshausen1996emergence,rehn2007network,zhu2013visual,zylberberg2011sparse}. In a similar fashion, we will compare statistical measures of space-time response characteristics against our proposed network. Additionally, recent work has shown that dynamical sparse coding network activity correlates strongly with first and second order population statistics from multi-unit recordings of a cat V1 cortical microcolumn using a silicon polytrode \cite{zhu2015sparse}. This work from Zhu et al. supports the existing suggestion that neighboring population activity is necessary to explain an appreciable amount of variance of a neuron's response to natural visual stimuli \cite{haslinger2012context,koster2013modeling,koster2014modeling}. We propose extending this into the temporal domain using the same polytrode data to investigate the hypothesis that the predictive spatio-temporal model will allow us to further improve response prediction by including the time domain.
+
+\subsection{State-of-the-Art Streaming Video Compression}
+\noindent Communicating with friends and family over large distances has become a ubiquitous capability in much of the world. Today, Americans can communicate with each other through a variety of messaging modalities, from text to annotated images to live video chat. However, of all the communication mediums, live video chat is by far the most challenging to deliver. In spite of impressive advancements in the field of video compression \cite{shan2005cross,sullivan2005video,ohm2012comparison}, the limited and variable internet bandwidth available to most Americans is still insufficient for seamless, interruption-free video communication. Furthermore, when bandwidth becomes restricted the current live video coding methods do not degrade gracefully by explicitly limiting the perceptual impact of data loss. There is an additional need to encode video in a way that takes inspiration from psychophysical studies on video perception to selectively lose data \cite{lee2012perceptual,takeuchi2002motion,takeuchi2005sharpening}, instead of strictly trying to increase the signal-to-noise ratio (SNR). The video representation should also be meaningful in such a way that allows manipulation and search by semantic content while in the compressed format \cite{porikli2010compressed,kapotas2010moving}. The proposed network for inferring an efficient sparse code for time-varying natural scenes could also be purposed as an improved algorithm for encoding and compressing streaming video data. As opposed to the standard approach of filtering and passive information processing, our proposed model takes inspiration from theories of information processing in primary visual cortex to dynamically encode video data in terms of the underlying causes. Our previous work has already demonstrated the ability to build a deep sparse coding model that selectively encodes different spatial frequency bands, which would prove to be valuable for graceful degradation of data \cite{paiton2015deconvolutional}. Other unpublished work from Dr. Olshausen's lab has shown promise at matching or surpassing standard compression algorithm performance using a spatio-temporal sparse code.
+
+%%%%%%%%%%%%%%%%%%%%%
+% Research Design & Methods
+%%%%%%%%%%%%%%%%%%%%%
+\section{Research Design and Methods} \label{methods}
+%\subsection{Statistical Regularities in Natural Images} \label{imagestats}
+%\subsubsection{General Structure in Natural Images}
+%\noindent Natural images, or images of natural scenes, tend to map to a specific statistical structure. Field 1/f work. Maybe recreate 1/f plot?
+
+%\subsubsection{Sparseness}
+%\noindent Sparseness is a term frequently used in statistics to describe a random variable. Given a vector of values between 0 and 1, if the values are each drawn from a statistically "white" distribution, then one would expect approximately equal frequency of activation values. In other words, a histogram of the activations would be relatively flat, as in figure \ref{activity_histograms}. However, if the vector values are forced to be sparse, then the values are expected to be mostly zero, with a relatively small number near the maximum. This causes a value histogram to be heavily peaked at zero with appreciable activity far out towards the tail of the distribution, at a value of 1.\\
+
+%\noindent There are several mechanisms for measuring sparseness of a distribution of values. Kurtosis, L0, L1 norms.\\
+%
+%\noindent Field work on sparse activations of wavelettes in natural images.\\
+
+%\subsubsection{Temporal Consistency}
+%\noindent One strong visual signal that has been studied extensively in developmental and visual psychology is the notion of object permanence or consistency \cite{}. Babies learn from the fact that objects in the world are consistent. This could serve as a type of signal to allow the brain to separate objects in the world. This statistical structure can be analyzed directly in natural videos.\\
+
+%\noindent Analysis of the statistical structure of videos.
+
+%\subsubsection{Whitening}
+%\noindent Motivation for whitening input spatially and temporally.\\
+
+%\noindent Theories for whitening in the cortex. Rucci, Atick. Evidence of temporal whitening.\\
+
+\subsection{Sparse Coding} \label{sparsecoding}
+\noindent The primary objective of sparse coding, as described in \cite{olshausen1997sparse}, is to encode input data (e.g. an image or video of a natural scene) in a generative framework, such that the data can be reconstructed from the code. Typically, we want the encoding to be of a higher dimensionality than the input image; that is to say we want our basis set to be overcomplete. Another essential constraint for the algorithm is that we want to use as few basis elements (or basis vectors) from the basis set to encode the image as possible. Mathematically, this is described using an energy function of the form:
+
+\begin{equation}
+    \argmin\limits_{a}
+        \left( E = 
+            \overbrace{ \tfrac{1}{2} \| S - R \|_{2}^{2} }^\text{Preserve Information} +
+        \overbrace{ \lambda \sum\limits_{m}C(a_{m}) }^\text{Limit Activations} \right)
+\label{energyfunc}
+\end{equation}
+
+\noindent Here, we use $S$ to indicate the input, which could be an image of a natural scene, a frame from a movie, or some other signal to be encoded. Our input is a vector of length $P$, which for our purposes is the number of pixels in an image. The parameter $\lambda$ is a trade-off variable between the sparsity of the representation (number of non-zero activity values) and the reconstruction error. The sparsity inducing cost penalty $C(.)$ could represent any one of a family of functions, which we will discuss in more detail later. Our representation of the image is a reconstruction, denoted $R$. This is defined as:
+
+\begin{equation}
+    R = a \phi = \sum\limits_{m}^{M} a_{m} \phi_{m}
+\label{recon}
+\end{equation}
+
+\noindent The vector-matrix multiplication, $a \phi$, results in a linear weighted superposition of all of the basis vectors to create a single reconstruction. The basis set, or dictionary, is represented as $\phi$. It is a matrix of size $M \times P$, where $M$ is the number of basis vectors (typically $>P$). The activations, $a$, weight the contribution that each basis vector has to reconstructing the input image. Our activation vector is of length $M$, where each index $m$ indicates the weighting for the $m^\text{th}$ basis vector. We typically want to have very few non-zero activity values (in practice, we expect around $0.1\%$).\\
+
+\noindent We wish to compute the activations in an iterative, generative fashion. This is in contrast with what is typically done in machine learning research, where activations are computed directly from the input in a feed-forward manner. Although the iterative approach is typically slower in simulation, it is more amenable to hardware and more closely reflects the probable computations being performed by biological vision systems \cite{olshausen1996emergence}. We also suspect that the activations and learned basis set are more optimal when computed this way, although we have not verified this hypothesis.\\
+
+\noindent Using the energy function in equation \ref{energyfunc}, we want to learn an optimal basis set, $\phi$, that represents the computational primitives, or basic elements, of our input data. Additionally, for a given input datum and a fixed basis set, we want to use the energy function to find a set of activations, $a$, that compute a faithful reconstruction of the input, while keeping the number of non-zero activation values small. First, we will focus on how to find activation values for a fixed basis set using the Locally Competitive Algorithm (LCA) \cite{rozell2008sparse} in section \ref{lca}, then we will discuss extending the model into the time domain. Next we will go over a convolutional and predictive extension to the LCA model in section \ref{scann}. Finally, we will outline proposed methods for a deep, predictive, convolutional sparse coding network.
+
+\subsection{The Locally Competitive Algorithm} \label{lca}
+\noindent As first described in Rozell et. al., 2008, the LCA model is a ``neurally plausible algorithm based on the principles of thresholding and local competition that solves a family of sparse approximation problems corresponding to various sparsity metrics'' \cite{rozell2008sparse}. The model describes an activation, $a_{m}(t)$, as the thresholded output of some model neuron's internal state (analogous to the membrane potential), $u_{m}(t)$. This internal state follows similar dynamics to the leaky integrator neuron model \cite{dayan2001theoretical}. When described as a network, the algorithm itself is a Hopfield network model \cite{hopfield1982neural}. The LCA is an iterative dynamical model, and thus the internal states and activations can be expressed as a function of a discrete time step. As the model advances in time, the overall sparse approximation relaxes to a solution that attempts to minimize the energy function described in equation \ref{energyfunc}. Here we will derive the dynamical equation for computing $u_{m}(t)$ from the energy function. For an alternative derivation of the same model, we refer the reader to the original citation \cite{rozell2008sparse}.\\
+
+\noindent We wish for our activations to minimize the energy function described in equation \ref{energyfunc}. Thus, we want our internal state to update proportionately to the partial derivative of the energy function with respect to a given neuron's activity, $\dot{u_{m}} \propto -\frac{\partial E}{\partial a_{m}}$. This will compute gradient descent on the energy function, as is typically done in sparse approximation. To illustrate the derivative, we first express the energy function in subscript notation:
+
+\begin{equation}
+    E(t) = \tfrac{1}{2} \sum\limits_{p}^{P} \left[ S_{p} - \sum\limits_{m}^{M}a_{m}(t) \phi_{m,p} \right]^{2} +
+           \lambda \sum\limits_{m}^{M} C(a_{m}(t))
+\label{indexenergyfunc}
+\end{equation}
+
+\noindent and then we take the derivative with respect to an individual element, $a_{i}(t)$:
+
+\begin{equation}
+\begin{aligned}
+    \frac{\partial E(t)}{\partial a_{i}(t)}
+    =
+        &\sum\limits_{p}^{P} \left[ -S_{p} \phi_{i,p} +
+        \phi_{i,p}\sum\limits_{m}^{M}a_{m}(t) \phi_{m,p} \right] +
+        \lambda \sum\limits_{m}^{M}\frac{\partial C(a_{m}(t))}{\partial a_{i}(t)} \\
+    =
+        &\sum\limits_{p}^{P} \left[ -S_{p} \phi_{i,p} +
+        \sum\limits_{m \neq i}^{M} \phi_{i,p} \phi_{m,p} a_{m}(t) + \phi_{i,p}\phi_{i,p} a_{i}(t) \right] +
+        \lambda \frac{\partial C(a_{i}(t))}{\partial a_{i}(t)}
+\end{aligned}
+\label{deda}
+\end{equation}
+
+\noindent Here the subscript $i$ refers to a specific element that we are updating, while $m$ refers to any element in general. We will assert that the basis vectors are unit-norm, $\parallel \phi_{i} \parallel^{2} = 1$. We do not necessarily have to make this assertion, although it simplifies the learning dynamics. If we don't force unit length then the leak time constant is proportional to the basis vector magnitude. In other words, if the magnitude of the receptive field is high, than the neuron will leak current more rapidly. Forcing the basis vectors to be unit norm allows us to have a more interpretable time constant.\\
+
+\noindent To update our internal state variable, $u_{i}(t)$, we will perform gradient descent on our energy function with respect to an active neuron, $a_{i}$:
+
+\begin{displaymath}
+    \dot{u_{i}}(t) =
+    &-\frac{1}{\tau} \frac{\partial E}{\partial a_{i}(t)} \\
+\end{displaymath}
+
+\noindent where $\tau$ is a proportionality constant.\\
+
+\noindent To simplify our equation, we will define the neuron's excitatory (i.e. driving) input as $b_{i} = S \phi_{i}$. That is, each neuron's excitatory input current is proportional to how well the stimulus (input image) matches the corresponding dictionary element. Each neuron also receives inhibition from other active neurons that is proportional to an $M \times M$ matrix, $G$. This matrix evaluates to the inner product of the given neuron's basis vector with all other neurons' basis vectors, $G_{i,m} = <\phi_{i},\phi_{m}>$. Thus, we can rewrite our update equation as
+
+\begin{equation}
+\begin{aligned}
+    \dot{u_{i}}(t) \propto
+    &-\frac{\partial E}{\partial a_{i}(t)} \\
+    = &\frac{1}{\tau} \left[ b_{i} - u_{i}(t) - \sum_{m \neq i}^{M}G_{i,m}a_{m}(t) \right]
+\end{aligned}
+\label{lcaupdate}
+\end{equation}
+
+\noindent Notice that the inhibition matrix is multiplied by the activation coefficient of the efferent (i.e. inhibiting) neuron. Neurons that best match the stimulus have stronger input, $b_{m}$, so they become active soonest. Active nodes inhibit other nodes with a signal strength that is proportional to both the activity, $a_{m}$, and the receptive field overlap, $G_{i,m}$. Thus, inhibition only comes from other neurons that are competing to reconstruct the input. The inhibition term encourages learned basis vectors to be as orthogonal as possible. This is beneficial as it encourages a maximally efficient basis set when learning and a maximally sparse representation during inference.\\
+
+
+\noindent For this expression to be valid, we must relate the cost penalty to the activity values and the internal state via a thresholding function. For a given threshold function, the cost function is specified (up to a constant) by
+
+\begin{equation}
+    \lambda \frac{\partial C(a_{i}(t))}{\partial a_{i}(t)} = u_{i}(t) - a_{i}(t) = u_{i}(t) - T_{\lambda}(u_{i}(t))
+\label{costthreshold}
+\end{equation}
+
+\noindent Following equation \ref{lcaupdate}, the active coefficients are related to the internal state variable by $u_{i} = a_{i} + \lambda \frac{\partial C(a_{i}(t))}{\partial a_{i}(t)}$. The thresholding function $T_{\lambda}(.)$ can take various forms, which determine the exact nature of the sparseness penalty. For our purposes, we will stick to a soft thresholding function, which corresponds to a $\l_1$ penalty:
+
+\begin{equation}
+    T_{\lambda}(u_{m}(t)) = \left\{
+    \begin{aligned}
+        0,\;\; &u_{m}(t)\; \leq\; \lambda \\
+        u_{m}(t)-\lambda,\;\; &u_{m}(t)\; >\; \lambda
+    \end{aligned}
+    \right.
+\label{thresholdfunc}
+\end{equation}
+
+\noindent Our thresholding function also acts as a rectifying function, a constraint that is not used in the original LCA definition. For a detailed comparison of thresholding functions to sparseness penalties, see \cite{rozell2008sparse}. With an $\l_1$ penalty, the thresholded network exactly describes an iterative shrinkage and thresholding algorithm (ISTA). The explicit sparsity constraint in traditional sparse coding is replaced by the thresholding ($T_{\lambda}(.)$) and lateral inhibition ($G_{i,m}a_{m}(t)$) terms. The next section describes extending the sparse coding model into a space-time framework.\\
+
+\subsection{Sparse Coding of Video Sequences} \label{sparsetime}
+\noindent We wish to extend the sparse coding model to encode information in the time domain. The extension outlined here was initially described in \cite{olshausen2003learning} and is not described in the LCA framework. One primary aim of this proposal is to combine the previously described LCA network with the sparse time extensions.\\
+
+\noindent In \cite{olshausen2003learning}, a time-varying image, $S(x,y,t)$, is modeled as a linear superposition of space-time basis functions, $\phi_i(x,y,\tau)$, where $\tau$ is the position in the basis function along the time dimension. These basis functions are weighted by an activity, $a_i(t)$, that varies over time. Figure \ref{ols_space_time} illustrates the model.\\
+
+\begin{figure}
+\centering
+    \includegraphics[width=80mm]{./figures/ols_spacetime_fig1.png}
+    \caption{\textbf{Spatiotemporal codes for time-varying images.} A movie $S(x,y,t)$ is modeled as a linear superposition of spatio-temporal basis functions, $\phi_i(x,y,\tau)$, which are localized in time. A sliding convolution over time between the movie and the basis function gives the activity values, $a_i(t)$. This method is non-causal because optimal locations in time are computed for each basis function. Figure and caption adapted from \cite{olshausen2003learning}.}
+\label{ols_space_time}
+\end{figure}
+
+\noindent As in regular sparse coding, the reconstruction can be subtracted from the original input to compute an error:
+
+\begin{equation}
+    e(x,y,t) = S(x,y,t) - \sum_i a_i(t) \ast \phi_i(x,y,t),
+\label{space_time_error}
+\end{equation}
+
+\noindent where $\ast$ denotes convolution over time. The activity, $a_i(t)$, grows proportionally to the correlation over time of the dictionary element and the reconstruction error computed in equation \ref{space_time_error}:
+
+\begin{equation}
+    \dot{a}_i(t) \propto
+        \lambda_{N} \sum_{x,y} \phi_{i}(x,y,t) \star e(x,y,t) - \frac{\partial C(a_{i}(t))}{\partial a_{i}(t)},
+\label{space_time_activity}
+\end{equation}
+
+\noindent where $\star$ denotes correlation over time and $C(a_{i}(t))$ is some sparsity inducing cost function. Once the model has settled for a given input, the basis functions can be updated by an amount proportional to the correlation between the error and the activities: 
+
+\begin{equation}
+    \Delta \Phi(x,y,t) \propto a_{i}(t) \star e(x,y,t).
+\label{space_time_bases}
+\end{equation}
+
+\noindent Like the spatial sparse coding model, this method requires that the basis functions be rescaled after each learning step. In \cite{olshausen2003learning}, each function's L2 norm is scaled such that the variance of the associated activation vector matches the variance of the input data.\\
+
+\noindent An important take away from the model described above is the use of the error signal to directly drive the neuron activities. This concept will be expanded upon in the convolutional predictive coding model described next, although in only the spatial domain. One major drawback to the model described is that it is non-causal. In order to be causal, the model representations must be computed without knowledge of any future inputs. In other words, the spatio-temporal basis vector, $\phi(x,y,t)$ must be zero for all $t > 0$. An additional drawback is that the method used to determine the sparse coefficients does not map well to how we believe neural systems compute information. We believe that both of these constraints can be incorporated into the space-time sparse coding model by incorporating principles from previous work on a Locally Competitive Algorithm (LCA) for sparse approximation.\\
+
+
+%%%%%%%%%%%%%%%%%%%%%
+% Forward Function
+%%%%%%%%%%%%%%%%%%%%%
+\subsection{Entropy Loss Function for Unsupervised Learning}\label{entropy_loss}
+\subsubsection{Introduction} \label{introduction}
+\noindent Here we describe a loss function for the unsupervised training of a deep neural network. This is motivated by the cost of labeling data and we want to learn a more general representation.\\
+
+\noindent The goal of the project is to develop a cost function that applies to any generic neural network output. In this document we will first define our loss function in terms of a cost that must be propagated through the deep network to modify parameters. Then we will derive the gradient of the cost function with respect to an individual output element from the deep network. This gradient can then be applied to the network parameters via the back propagation algorithm. We assume that the deep network is being trained via stochastic gradient descent with a batch of images. For each image, we expect an output vector of floats (they could be positive only, but it is not required). We assume one  vector per image in the batch, which can then be assembled into a matrix.
+
+%%%%%%%%%%%%%%%%%%%%%
+% Forward Function
+%%%%%%%%%%%%%%%%%%%%%
+\subsubsection{Forward Function - Entropy Computation} \label{entropy_forward}
+\noindent The input to the entropy loss function is $X$, a matrix of $N$ neurons by $B$ batch inputs. We note that the indices $i, j, k$ will be used to index the node in $X$ and $l,m,n$ will be used to index the batch number in $X$. We want the network output distribution for a given image to be a delta function (i.e. one-hot distribution), indicating that the input falls into a particular category. Additionally, we want the average network output distribution over all images to be uniform. These objectives can be expressed in terms of entropy. First we define a probability distribution across the $N$ nodes in $X$:
+
+\begin{equation} \label{qdef}
+    Q_{i,l} = \frac{e^{-\beta X_{i,l}}}{\sum_{j}^{N} e^{-\beta X_{j,l}}},
+\end{equation}
+
+\noindent where $Q$ is computed per neuron for a single input, $i \in N$ indexes the neurons, and $l \in B$ indexes the batch input. For $\beta = -1$, equation \ref{qdef} is the softmax function on $X$. We include the $\beta$ term to allow us to modify the temperature of our probability distribution. Next we define a probability distribution across our batch of $B$ inputs:
+
+\begin{equation} \label{pdef}
+    P_{i,l} = \frac{e^{-\beta X_{i,l}}}{\sum_{m}^{B} e^{-\beta X_{i,m}}}.
+\end{equation}
+
+\noindent The entropy for a given batch image (summed over nodes) and for a given node (summed over the batch) are
+
+\begin{equation} \label{Hl}
+    H_{l} = -\sum_{i} Q_{i,l} \ln Q_{i,l}
+\end{equation}
+
+\noindent and
+
+\begin{equation} \label{Hi}
+    H_{i} = -\sum_{l} P_{i,l} \ln P_{i,l},
+\end{equation}
+
+\noindent respectively. We wish for all nodes to be active over the corpus of our inputs and for only one node to be active for a single input. Thus, we want to minimize \textbf{positive} entropy per image and minimize \textbf{negative} entropy per batch. This should encourage the network to cluster inputs into discrete categories and produce a sparse output. Therefore, our cost function to minimize will combine equation \ref{Hl} with the negative of equation \ref{Hi}:
+
+\begin{displaymath}
+\begin{align}
+
+    C& = \sum_{l}H_{l} - \lambda \sum_{i}H_{i}\\
+
+    C& = - \sum_{l}\sum_{i} Q_{i,l} \ln Q_{i,l} + \lambda \sum_{i}\sum_{l} P_{i,l} \ln P_{i,l}
+\end{align}
+\end{displaymath}
+
+\begin{equation} \label{cost}
+\begin{aligned}
+    C& = \sum_{i,l}\frac{e^{-\beta X_{i,l}}}{\sum_{j}e^{-\beta X_{j,l}}} \left(\beta X_{i,l} + \ln{\sum_{j}e^{-\beta X_{j,l}}}\right) -\\ 
+     & \lambda \sum_{i,l}\frac{e^{-\beta X_{i,l}}}{\sum_{m} e^{-\beta X_{i,m}}} \left(\beta X_{i,l} + \ln{\sum_{m}e^{-\beta X_{i,m}}}\right).
+\end{aligned}
+\end{equation}
+
+\noindent It should be clear here that the two entropy calculations are nearly identical, and therefore the derivatives are going to be similar. We will take the derivative of one entropy function and apply it to both terms in our cost function.
+
+\begin{displaymath}
+    H_{l} = - \sum_{i} Q_{i,l} \ln Q_{i,l}
+\end{displaymath}
+
+\begin{displaymath}
+    H_{l} =
+    \sum_{i}\frac{\beta X_{i,l} e^{-\beta X_{i,l}}}{\sum_{j}e^{-\beta X_{j,l}}} + 
+    \sum_{i}\frac{e^{-\beta X_{i,l}}}{\sum_{j}e^{-\beta X_{j,l}}}\ln{\sum_{j}e^{-\beta X_{j,l}}}
+\end{displaymath}
+
+\begin{equation} \label{entropyexp}
+    H_{l} =
+    \overbrace{\sum_{i}\frac{\beta X_{i,l}e^{-\beta X_{i,l}}}{\sum_{j}e^{-\beta X_{j,l}}}}^\text{Left Term} + 
+    \overbrace{\frac{\ln{\sum_{j}e^{-\beta X_{j,l}}}}{\sum_{j}e^{-\beta X_{j,l}}}\sum_{i}e^{-\beta X_{i,l}}}^\text{Right Term}.
+\end{equation}
+
+%%%%%%%%%%%%%%%%%%%%%
+% Backward Function
+%%%%%%%%%%%%%%%%%%%%%
+\subsubsection{Backward Function - Entropy Gradient} \label{entropy_backward}
+\noindent The gradient of the forward function will contain the partial derivative of equation \ref{cost} with respect to an individual element, $X_{k,l}$. For the sake of brevity, we will only derive a single entorpy term, given in equation \ref{entropyexp}. First we will take the derivative of the left term, as defined in equation \ref{entropyexp}, then we will take the derivative of the right term, then we will combine them.
+
+\noindent The following are a handful of derivatives that have to be taken multiple times for the entropy gradient calculation.
+
+%TODO: Left justify
+\begin{equation} \label{dx}
+    \frac{\partial\sum_{i}X_i}{\partial X_{k}} = \frac{\partial X_{k}}{\partial X_{k}} + \frac{\partial \sum_{i \ne k} X_{i}}{\partial X_{k}} = 1
+\end{equation}
+
+\begin{equation} \label{dex}
+    \frac{\partial \sum_{i}e^{-\beta X_{i}}}{\partial X_{k}} = \frac{\partial e^{-\beta X_{k}}}{\partial X_{K}} + \frac{\partial \sum_{i \ne k} e^{-\beta X_{i}}}{\partial X_{k}} = -\beta e^{-\beta X_{k}}
+\end{equation}
+
+\begin{equation} \label{dxex}
+\begin{aligned}
+    \frac{\partial \sum_{i}\beta X_{i} e^{-\beta X_{i}}}{\partial X_{k}}
+    &= \frac{\partial \beta X_{k} e^{-\beta X_{k}}}{\partial X_{k}} + \frac{\partial \sum_{i \ne k} \beta X_{i} e^{-\beta X_{i}}}{\partial X_{k}} \\
+    &= \frac{\partial \beta X_{K}}{\partial X_{k}} e^{-\beta X_{k}} + \beta X_{k} \frac{\partial e^{-\beta X_{k}}}{\partial X_{k}}\\
+    &= \beta e^{-\beta X_{k}} + \beta X_{k} (-\beta e^{-\beta X_{k}})\\
+    &= \beta e^{-\beta X_{k}}(1 - \beta X_{k})
+\end{aligned}
+\end{equation}
+
+\begin{equation} \label{dlne}
+    \frac{\partial \ln{\sum_{j} e^{-\beta X_{j}}}}{\partial X_{k}} = \frac{1}{\sum_{j} e^{-\beta X_{j}}} \frac{\partial \sum_{j} e^{-\beta X_{j}}}{\partial X_{k}} = \frac{-\beta e^{-\beta X_{k}}}{\sum_{j}e^{-\beta X_{j}}}
+\end{equation}
+
+\begin{equation} \label{qderiv}
+    \frac{\partial Q_{i}}{\partial X_{i}} = \frac{-\sum_{j} e^{-\beta X_{j}} \beta e^{-\beta X_{i}} + \beta (e^{-\beta X_{i}})^2} {(\sum_{j}e^{-\beta X_{j}})^2} = \beta Q_{i} \left(Q_{i} - 1\right)
+\end{equation}
+
+\noindent First we take the derivative of the left side of the Entropy cost function.
+%TODO: Lign up equal signs
+
+\begin{displaymath}
+    \frac{\partial H_{l}}{\partial X_{k,n}} =
+    \frac{\sum_{j}e^{-\beta X_{j,n}}\frac{\partial\sum_{i}\beta X_{i,n} e^{-\beta X_{i,n}}}{\partial X_{k,n}}
+    - \sum_{i}\beta X_{i,n} e^{-\beta X_{i,n}}\frac{\partial\sum_{j}e^{-\beta X_{j,n}}}{\partial X_{k,n}}}{\left(\sum_{j}e^{-\beta X_{j,n}}\right)^{2}}
+    + \ldots
+\end{displaymath}
+
+\begin{displaymath}
+    \frac{\partial H_{l}}{\partial X_{k,n}} =
+    \frac{\sum_{j}e^{-\beta X_{j,n}} \beta e^{-\beta X_{k,n}}\left(1 - \beta X_{k,n}\right) + \beta^{2} e^{-\beta X_{k,n}} \sum_{i}X_{i,n}e^{-\beta X_{i,n}}}{\left(\sum_{j}e^{-\beta X_{j,n}}\right)^{2}}
+    + \ldots
+\end{displaymath}
+
+\begin{displaymath}
+    \frac{\partial H_{l}}{\partial X_{k,n}} =
+    \frac{\beta e^{-\beta X_{k,n}}\left(1 - \beta X_{k,n}\right)}{\sum_{j}e^{-\beta X_{j,n}}}
+    + \frac{\beta^{2} e^{-\beta X_{k,n}} \sum_{i}X_{i,n}e^{-\beta X_{i,n}}}{\left(\sum_{j}e^{-\beta X_{j,n}}\right)^{2}}
+    + \ldots
+\end{displaymath}
+
+\begin{displaymath}
+    \frac{\partial H_{l}}{\partial X_{k,n}} =
+    \frac{\beta e^{-\beta X_{k,n}}}{\sum_{j}e^{-\beta X_{j,n}}} \left(1 - \beta X_{k,n} + \frac{\beta \sum_{i}X_{i,n}e^{-\beta X_{i,n}}}{\sum_{j}e^{-\beta X_{j,n}}}\right)
+    + \ldots
+\end{displaymath}
+
+\begin{displaymath}
+    \frac{\partial H_{l}}{\partial X_{k,n}} = \beta Q_{k,n} \left(1 - \beta X_{k,n} + \beta \sum_{i}X_{i,n}Q_{i,n}\right) + \ldots
+\end{displaymath}
+
+\begin{displaymath}
+    \frac{\partial H_{l}}{\partial X_{k,n}} = \beta Q_{k,n} - \beta^{2}X_{k,n}Q_{k,n} + \beta^{2}Q_{k,n}\sum_{i}X_{i,n}Q_{i,n} + \ldots
+\end{displaymath}
+
+\noindent next we take the derivative of the right side of the entropy cost function
+
+\begin{displaymath}
+    \frac{\partial H_{l}}{\partial X_{k,n}} = \ldots + 
+    \sum_{i}e^{-\beta x_{i,n}} \left(\frac{\sum_{j}e^{-\beta X_{j,n}} \left(\frac{-\beta e^{-\beta X_{k,n}}}{\sum_{j}e^{-\beta X_{j,n}}}\right)
+    + \beta e^{-\beta X_{k,n}}\ln{\sum_{j}e^{-\beta X_{j,n}}}}{\left(\sum_{j}e^{-\beta X_{j,n}}\right)^{2}}\right)
+    + \frac{\ln{\sum_{j}e^{-\beta X_{j,n}}}}{\sum_{j}e^{-\beta X_{j,n}}}\left(-\beta e^{-\beta X_{k,n}}\right)
+\end{displaymath}
+
+\begin{displaymath}
+    \frac{\partial H_{l}}{\partial X_{k,n}} = \ldots + 
+    \frac{-\beta e^{-\beta X_{k,n}}}{\sum_{j}e^{-\beta X_{j,n}}}
+    + \frac{\beta e^{-\beta X_{k,n}}\ln{\sum_{j}e^{-\beta X_{j,n}}}}{\sum_{j}e^{-\beta X_{j,n}}}
+    - \frac{\beta e^{-\beta X_{k,n}}\ln{\sum_{j}e^{-\beta X_{j,n}}}}{\sum_{j}e^{-\beta X_{j,n}}}
+\end{displaymath}
+
+\begin{equation}
+    \frac{\partial H_{l}}{\partial X_{k,n}} = \ldots - \beta Q_{k,n}
+\label{rightd}
+\end{equation}
+
+\noindent Finally, we combine the left and right derivatives to get the final gradient equation.
+
+\begin{displaymath}
+    \frac{\partial H_{l}}{\partial X_{k,n}} = \beta Q_{k,n} - \beta^{2} X_{k,n} Q_{k,n} + \beta^{2} Q_{k,n} \sum_{i}X_{i,n}Q_{i,n} - \beta Q_{k,n}
+\end{displaymath}
+
+\begin{displaymath}
+    \frac{\partial H_{l}}{\partial X_{k,n}} = - \beta^{2}X_{k,n}Q_{k,n} + \beta^{2}Q_{k,n}\sum_{i}X_{i,n}Q_{i,n}
+\end{displaymath}
+
+\begin{equation}
+    \frac{\partial H_{l}}{\partial X_{k,n}} = \beta^{2}Q_{k,n}\left(\sum_{i}X_{i,n}Q_{i,n} - X_{k,n}\right),
+\label{combd}
+\end{equation}
+
+\noindent where $Q_{k,n}$ is given in equation \ref{qdef}. Equation \ref{cost} has two entropy terms in it, the gradient of which can be derived by following the same process outlined above.
+
+\begin{displaymath}
+    \frac{\partial C}{\partial X_{k,n}} = \beta^{2} Q_{k,n} \left(\sum_{i}X_{i,n}Q_{i,n} - X_{k,n}\right) - \lambda \beta^{2} P_{k,n} \left( \sum_{l}X_{k,l}P_{k,l} - X_{k,n}\right)
+\end{displaymath}
+
+\begin{equation} \label{costgrad}
+    \frac{\partial C}{\partial X_{k,n}} = \beta^{2} \left( Q_{k,n} \left(\sum_{i}X_{i,n}Q_{i,n} - X_{k,n}\right) - \lambda P_{k,n} \left( \sum_{l}X_{k,l}P_{k,l} - X_{k,n}\right)\right)
+\end{equation}
+
+%%%%%%%%%%%%%%%%%%%%%
+% DrSAE
+%%%%%%%%%%%%%%%%%%%%%
+\subsection{Deep Recurrent Sparse Auto-Encoder}
+\noindent DrSAE solves the following family of equations:
+
+\begin{displaymath}
+\begin{aligned}
+    L^{U} &= \tfrac{1}{2} \| I - D a(T) \|_{2}^{2} + \lambda |a(T)|_{1} \\
+    L^{S} &= y - \log\left(\sum_{i}e^{C\frac{a(T)}{\|a(T)\|_{2}}}\right) \\
+    \text{Energy} &= L^{U} + L^{S} \\
+    a(t+1) &= \text{ReLu}(E I + S a(t) - b)
+\end{aligned}
+\end{displaymath}
+
+\noindent when only considering the unsupervised loss, DrSAE reduces to sparse coding under the following constraints:
+
+\begin{displaymath}
+\begin{aligned}
+E &\rightarrow D^T \\
+S &\rightarrow \text{Identity} - D^TD
+\end{aligned}
+\end{displaymath}
+
+%%%%%%%%%%%%%%%%%%%%%
+% Deep Sparse Coding
+%%%%%%%%%%%%%%%%%%%%%
+\subsection{Deep Sparse Coding}
+\subsubsection{Introduction}
+\noindent Here we will describe a model for generating hierarchical representations of input scenes. First we add the supervised objective:
+
+\begin{equation} \label{semi_supervised_energy}
+\argmin\limits_{a, \phi}, W}
+        \left( 
+            \overbrace{ \tfrac{1}{2} \| I - \phi a \|_{2}^{2} }^\text{Preserve Information} +
+        \overbrace{ \lambda C(a) }^\text{Limit Activations}  +
+        %\overbrace{ \gamma \mathscr{L} \left(W \frac{a}{||a||_{2}}, y\right) }^\text{Categorical Cost}
+        \overbrace{ \gamma \mathscr{L} \left(\hat{y}, y\right) }^\text{Categorical Cost}
+        \right)
+\end{equation}
+
+\noindent where
+
+\begin{displaymath}
+    \hat{y_{n}} = \frac{e^{-Wa}}{\sum_{n}e^{-Wa}}
+\end{displaymath}
+
+\noindent Taking the derivative gives us a new membrane update rule for LCA inference:
+
+\begin{equation}
+    \tau\dot{u_{i}}(t) + u_{i}(t) =
+        \phi_{i}^{T}I -
+        \sum_{m \neq i}^{M}\left(\phi^{T}\phi-\mathbb{1}\right)_{i,m}a_{m}(t) -
+        \sum_{n}^{N} W_{n,m}\delta(\hat{y}_{n})
+\end{equation}
+
+\noindent where $\hat{y}$ represents the softmax output of the classification layer, and $\mathbb{1}$ is the identity matrix. Finally, we want to construct a new objective function for a hierarchical sparse coding model:
+
+\begin{displaymath} \label{semi_supervised_energy}
+    \argmin\limits_{a, b, phi, W}
+        \left( E =
+        \overbrace{ \tfrac{1}{2} \| I - \phi a \|_{2}^{2} }^\text{$P(I|a)$} +
+        \overbrace{ \sum\limits_{i}\left(\frac{a_{i}}{\sigma_{i}} +
+        \log \left( \sigma_{i} \right)\right) }^\text{$P(a|b)$} +
+        \overbrace{ \lambda \sum\limits_{j} |b_{j}| }^\text{$P(b)$}
+        \right)
+\end{displaymath}
+
+\noindent where
+
+\begin{displaymath}
+\log\left(\sigma_{i}\right) = \sum_{j} W_{ij} b_{j}
+\end{displaymath}
+
+\subsection{Sparse Convolutional Artificial Neural Networks}\label{scann}
+\noindent The LCA model was originally described to be performed on a small patch of an image. However, one can easily modify the LCA algorithm so that it can be expressed in a convolutional framework that has been named SCANN in previous work. To begin, we rewrite the dynamical equation for an LCA model neuron's internal state, expanding all of the terms:
+
+\begin{displaymath}
+    \dot{u}(t) =
+        \frac{1}{\tau} \left[ \overbrace{ -u(t) }^\text{Leak} +
+        \overbrace{ S \phi^T }^\text{Excitation} -
+        \overbrace{ a(t) \phi \phi^T }^\text{Lateral Inhibition} +
+        \overbrace{ \mathbf{I} a(t)}^\text{Self} \right]
+\end{displaymath}
+
+\noindent where the term containing the identity matrix, $\mathbf{I}$, is used to remove the self interaction from the weight decay. Now we can isolate the $\phi^T$ term to rewrite the equation in terms of a residual error:
+
+\begin{equation}
+    \dot{u}(t) =
+        \frac{1}{\tau} \left[ \overbrace{ -u(t) }^\text{Leak}+
+        \phi^T \overbrace{\left[
+            S  - a(t) \phi \right] }^\text{Residual Error} +
+        \overbrace{\mathbf{I}a(t)}^\text{Self} \right]
+\label{scannupdate}
+\end{equation}
+
+\begin{figure}
+\centering
+    \includegraphics[width=50mm]{./figures/SCANN_LAYER.pdf}
+    \caption{\textbf{Schematic illustrating the single-layer SCANN network.} This framework allows the LCA model to be easily implemented into a convolutional framework. The Error layer computes the difference between the input, $S$, and the reconstruction, $\Phi T_{\lambda}(u(t))$. This value is matrix multiplied by $\phi^{T}$ to drive the neuron layer.}
+\label{scannlayer}
+\end{figure}
+
+\noindent Like the spatio-temporal model, the residual error between the input and the reconstruction is the driving component to the final activations. This form of the equation also bears a strong resemblance to a single layer of the predictive coding network described by Rao and Ballard \cite{rao1999predictive}. Figure \ref{scannlayer} gives a block diagram for equation \ref{scannupdate}.\\
+
+\noindent Now we can easily express the SCANN network in a convolutional framework. For each of the matrix multiplications, we will instead perform a convolution. Our basis set, $\phi$ can be thought of as a kernel of basis functions, which is replicated across an image with some fixed stride. See \cite{schultz2014replicating} for additional investigations into attributes of the convolutional SCANN model and \cite{paiton2015deconvolutional} for an extension of the SCANN model into a deep architecture.\\
+
+\noindent For sparse approximation using the LCA model, we assume the input image and basis set are both fixed. Upon reaching a satisfactory approximation (and thus a minimal reconstruction error), we can perform a weight update step by doing gradient descent on the original energy function in equation \ref{energyfunc}. Normally, we would want to accumulate the weight update gradient over several image patch presentations (which would implement stochastic gradient descent via batch learning). However, because we extended the LCA model to be convolutional, for sufficiently large images, we can treat the entire image as a batch of small patches, and perform our weight update after each image presentation.
+
+\subsection{Outline of Work to be Performed}
+\noindent Our ultimate goal is to develop a neural network model that generates a rich adaptive code for video sequences. Our baseline for such a network will be the model described in \cite{olshausen2003learning}. We will first extend this by incorporating LCA sparse approximation. At this point we can establish an initial performance assessment using several of the metrics described herein, including video compression and modeling neural population activity. Building on principles described in \cite{charles2011causal}, we will aim for the network to form causal representations of visual data. The next extension of the model will be to describe it in the convolutional predictive coding framework described in section \ref{scann}, which will allow us to scale up the model to compare it to standard deep network architectures on a number of machine learning challenges. In order to increase the efficiency of the video code, and to incorporate more interesting computational elements, we will stack the network in a linear/non-linear hierarchy of sparse coding layers, using methods inspired from \cite{paiton2015deconvolutional,cadieu2008learning,le2013building}. The deep network will incorporate group sparse coding principles for grouping model neurons both spatially and temporally, reminiscent of the work of \cite{le2013building,hyvarinen2003bubbles,karklin2005hierarchical}. At each step along this process, we will continue to evaluate performance and compare how added complexity effects video coding.
+
+\section{Conclusions and Preliminary Work}
+\noindent We propose extending the LCA sparse coding framework to be predictive and to learn spatio-temporal weight matrices. We believe each model should make a prediction of inputs to come in much the same way that the described SCANN framework makes predictions of the current input. In figure \ref{predictionmodel} we show a schematic that illustrates a set of three dictionaries for reconstructing inputs, denoted $\phi_{-1,0,1}$. The horizontal axis denotes time, where the center point is the current instance in time and is marked by $\tau$. The dictionary for time $t=\tau$, $\phi_{0}$, acts to reconstruct the current input, $I(\tau)$. However, given the same activity values, $a(\tau)\phi_{1}$ makes a prediction of what is to come. This prediction would then be decoded in the following time step using $\phi_{-1}$. Thus, $\phi(t)$ is a relative time matrix with indices that span a step back in time and a step forward in time. Ideally, the reconstruction for time $t=\tau$ would improve as time passes, from a rough prediction made in the past ($a(t=\tau-1)*\phi_{1}$, for example) to a refined representation based on inputs following time $t=\tau$.\\
+
+\begin{figure}
+\centering
+    \includegraphics[width=60mm]{./figures/space_time_prediction.png}
+    \caption{\textbf{Proposed schematic for predicting future inputs in time.} The current time step is denoted as $time=\tau$, with future time steps to the right and past time steps to the left. This model shows three dictionaries to reconstruct the past ($\phi_{-1}$), present ($\phi_{0}$) and future ($\phi_{1}$) from a single activity $a(\tau)$.}
+\label{predictionmodel}
+\end{figure}
+
+\noindent Previous studies have shown that group sparse coding models can facilitate separating form from motion \cite{cadieu2008learning}. We believe that this concept can also be extended to learning spatio-temporal filters. We hypothesize that a two layer network that learns coefficient activation sequences can effectively learn the spatio-temporal structure of natural scenes. Where the original space-time sparse coding model computes an image reconstruction as
+
+\begin{displaymath}
+    R(x,y,t) = \sum_{i}a_i(t) \ast \phi_{i}(x,y,t),
+\end{displaymath}
+
+\noindent one could extend this model to a hierarchical group sparse coding framework such that spatial filters are group in time:
+
+\begin{equation}
+\begin{align}
+    &R(x,y,t) = \sum_{i}\mu_{i}(t)\phi_{i}(x)\\
+    &\mu_{i}(t) = \sum_{j}a_{j}(t) \ast \psi_{i,j}(t).
+\end{align}
+\label{groupspacetime}
+\end{equation}
+
+\noindent This framework is similar to that proposed in \cite{le2013building,garrigues2010group}, although instead of grouping temporally coherent features they group spatially similar features. We believe that combining principles of predictive coding with group sparse coding in a convolutional LCA framework will allow us to learn spatio-temporal receptive fields in a causal way. Such a model could then be used to advance our understanding of the mammalian primary visual cortex and to develop advanced technologies for streaming video compression.
+
+%\begin{acknowledgements}
+%\noindent I would like to thank Dr. Olshausen, who provided valuable feedback for this proposal.\\
+%\end{acknowledgements}
+
+% BibTeX users please use one of
+%\bibliographystyle{spbasic}   % basic style, author-year citations
+\bibliographystyle{spmpsci}    % mathematics and physical sciences
+%\bibliographystyle{spphys}    % APS-like style for physics
+\bibliography{references} % name your BibTeX data base
+
+\end{document}

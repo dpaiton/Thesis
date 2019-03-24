@@ -1,0 +1,187 @@
+\chapter{Computational Models for Encoding Natural Images}
+
+\section{Classical Image Coding Models}
+
+\subsection{The Linear / Non-linear neuron model}
+Simoncelli, etc. Adding components.
+
+\subsection{Autoencoders}
+Autoencoders as a NN implementation of L/NL neurons.
+
+\subsection{Predictive Coding}
+Rao & Ballard PC.
+
+\subsection{ICA}
+Bell & Sejnowski ICA
+
+\section{Sparse Coding}
+In practice, sparse coding on images involves the tasks of learning a dictionary from data and given a dictionary finding an optimal sparse code for an input signal. Here we will say that an optimal sparse code gives the most faithful representation of the data using the fewest dictionary elements. The primary objective of sparse coding, as described in \cite{olshausen1997sparse}, is to encode input data (e.g. an image of a natural scene) in a generative framework, such that the data can be reconstructed from the code. Typically, we want the encoding to be of a higher dimensionality than the input image; that is to say we want our dictionary to be overcomplete.
+
+For an $N$-dimensional input signal (e.g. an $N$ pixel image), $S \in \mathbb{R}^{N}$, we want a dictionary of $M > N$ vectors, where each vector is of length $N$. The dictionary is a matrix $\Phi$ with dimensions $N \times M$. Each of the $M$ columns are dictionary elements, $\phi_{i}, i \in \{1,...,M\}$, and each dictionary element has a corresponding coefficient, $a_{i}, i \in \{1,...,M\}$, that we can assemble into a vector of activations. Our goal is to minimize an energy function that requires both a faithful and efficient representation of the data, in that it reconstructs the data well with the fewest number of active elements. We can express this mathematically as
+
+\begin{equation}
+    \argmin\limits_{a, \Phi}
+        \left( E =
+            \overbrace{ \tfrac{1}{2} \| S - \hat{S} \|_{2}^{2} }^\text{Preserve Information} +
+        \overbrace{ \lambda \sum\limits_{i=1}^{M}C(a_{i}) }^\text{Limit Activations} \right),
+\label{energyfunc}
+\end{equation}
+
+where $\hat{S} = \sum\limits_{i=1}^{M}\phi_{i}a_{i}$ is the image reconstruction, $\argmin\limits_{a, \Phi}$ tells us that we want to minimize the energy with respect to both the activations and the dictionary, and $||.||_2^2$ indicates the squared $l_2$ norm. In this energy function, we use $\lambda$ as a tradeoff penalty between the reconstruction quality and the sparsity constraint. In practice we tune it to maximize network sparsity for a minimum accepted reconstruction quality. One popular choice for the cost function, $C(.)$, is the $l_1$ cost penalty, which is the sum of the absolute value of all activations:
+
+%\begin{equation}
+\begin{align}\label{l1cost}
+  &C(a_{i}) = |a_{i}| \\
+  &\sum\limits_{i=1}^{M}C(a_{i}) = \sum\limits_{i=1}^{M}|a_{i}|
+\end{align}
+%\end{equation}
+
+In sparse coding, we compute a coefficient vector, $a$, using a dynamic processes that minimizes \eqref{energyfunc}. A neural network following LCA dynamics is one of many approaches to finding a set of activations for a given input image and dictionary.
+
+\section{The Locally Competitive Algorithm}
+The Locally Competitive Algorithm (LCA) is a method for computing a sparse code from a given input signal and dictionary. The model describes an activation coefficient, $a_{k}$, as the thresholded output of some model neuron's internal state, $u_{k}$, which is analogous to the neuron's membrane potential. This internal state follows similar dynamics to a leaky integrator neuron model. The LCA can be described as a continuous system that is implementable in hardware, or as a discrete system with an internal state that advances as a function of a time step. As the model state advances, the system relaxes to a minimum solution of the energy function described in equation \eqref{energyfunc}. Here we will derive the dynamical equation for computing the state transitions from the energy function.
+
+We wish for our neuron activations to minimize the energy function described in equation \eqref{energyfunc}. The standard way to do this would be to perform direct gradient descent on the energy function. To illustrate the derivative, we first express the energy function in subscript notation:
+
+\begin{equation}
+    E(t) = \tfrac{1}{2} \sum\limits_{i=1}^{N} \left[ S_{i} - \sum\limits_{j=1}^{M}a_{j}(t) \Phi_{i,j} \right]^{2} + \lambda \sum\limits_{j=1}^{M} C(a_{j}(t))
+\label{indexenergyfunc}
+\end{equation}
+
+and then we take the derivative with respect to an individual neuron's activity, $a_{k}(t)$. Since we ultimately want to do gradient \textit{descent}, we will write the negative derivative:
+
+%\begin{equation}
+\begin{align}\label{deda}
+    - \frac{\partial E(t)}{\partial a_{k}(t)}
+    =
+        &\sum\limits_{i=1}^{N} S_{i} \Phi_{i,k} -
+        \Phi_{i,k}\sum\limits_{j=1}^{M}a_{j}(t) \Phi_{i,j} -
+        \lambda \sum\limits_{j=1}^{M}\frac{\partial C(a_{j}(t))}{\partial a_{k}(t)} \\
+    =
+        &\sum\limits_{i=1}^{N} \left[ S_{i} \Phi_{i,k} -
+        \sum\limits_{j \neq k}^{M} \Phi_{i,k} \Phi_{i,j} a_{j}(t) - \Phi_{i,k}\Phi_{i,k}a_{k}(t) \right] -
+        \lambda \frac{\partial C(a_{k}(t))}{\partial a_{k}(t)}
+\end{align}
+%\end{equation}
+
+One constraint that we impose on our model is that we want the dictionary elements to all be unit norm in the pixel dimension, $||\phi_{i}||_2^2 = 1$. This means that the $\sum_{i=1}^{N}\Phi_{i,k}\Phi_{i,k}a_{k}(t)$ term in equation \eqref{deda} reduces to $a_k(t)$:
+
+\begin{equation}
+    -\frac{\partial E(t)}{\partial a_{k}(t)} =
+    \sum\limits_{i=1}^{N} \left[ S_{i} \Phi_{i,k} -
+    \sum\limits_{j \neq k}^{M} \Phi_{i,k} \Phi_{i,j} a_{j}(t) \right] - a_{k}(t) -
+    \lambda \frac{\partial C(a_{k}(t))}{\partial a_{k}(t)}
+\label{dedasimple}
+\end{equation}
+
+Note that $E(t)$ and $a(t)$ both vary in time. In this scenario, we can imagine a constant input signal, $S$, and a constant set of dictionary elements, $\Phi$. Given these constants, we want the system to evolve over time to produce an optimal set of activations, $a$. Equation \eqref{indexenergyfunc} gives us the energy at each time point during this inference process. Each neuron has a corresponding dictionary element, $\phi_{k}$, which is a vector that indicates the connection strength to each pixel in the input. You can think of this as the strength of the synaptic connections between the neuron and each input pixel, or the neuron's feed-forward receptive field. In this model, we are going to find a sparse code for one patch of an image at a time, so that all $M$ neurons are connected to the same image patch, $S$. The model neuron has a driving excitatory input, which we will denote $b_{k} = S\phi_{k} = \sum_{i=1}^{N}S_{i} \Phi_{i,k}$. This is the projection of the input image onto the neuron's corresponding dicitonary element. The stronger the similarity between the input, $S$, and the dictionary element, $\phi_{k}$, the stronger the driving excitatory input. Each neuron also receives inhibition from every other active neuron. The magnitude of inhibition is partially set by an $M \times M$ Gramian matrix, $G$. The matrix evaluates to the inner product of the each neuron's dictionary element with all other neurons' dictionary elements, $G = \Phi^T\Phi$, such that each element in $G$ gives the overlap in pixel space between two dictionary elements, $G_{i,j} = \sum\limits_{n=1}^{N} \Phi_{n,i}\Phi_{n,j}$. The total inhibition onto a neuron is also scaled by how active the inhibiting neuron is.
+
+Next, we define a new function of the activity and sparsity cost function. This function can be thought of as the self inhibition that increases as the value of $a_{k}$ increases:
+
+\begin{equation}
+f_{\lambda}(a_{k}(t)) = a_{k}(t) + \lambda \frac{\partial C(a_{k}(t))}{\partial a_{k}(t)}
+\label{hopfieldtfunc}
+\end{equation}
+
+Now we can write the partial derivative of our energy function (equation \eqref{energyfunc}) in terms of our new variables:
+
+\begin{equation}
+    - \frac{\partial E(t)}{\partial a_{k}(t)} =
+    b_{k} -
+    \sum\limits_{j \neq k}^{M} G_{k,j} a_{j}(t) -
+    f_{\lambda}(a_{k}(t))
+\label{dedasimple}
+\end{equation}
+
+At this point we could update $a(t)$ using gradient descent following equation \eqref{dedasimple} to produce a sparse code from an input signal. However, because we are neuroscientists we should be bothered by the idea that the neurons are all signaling their state at all time. A better solution would be to have the neuron maintain an internal state, analagous to the neuron's membrane potential. The neuron could then only produce output when its membrane potential passed over some threshold. Following this logic, Rozell et al. define an internal state variable, $u_{k}(t)$ that represents the membrane potential for neuron $k$ at time $t$. When a neuron's potential climbs above some threshold, it communicates this excitement in the form of an activation, $a_{k}(t)$. Only these excited neurons can contribute to the image code. Ultimately, the network of neurons should still descend the energy function from equation \eqref{energyfunc}, so our neuron's state dynamics must be governed by the following equation:
+
+\begin{displaymath}
+    \dot{u_{k}}(t) \propto - \frac{\partial E(t)} {\partial a_{k}(t)} \\
+\end{displaymath}
+
+\begin{equation}\label{udot}
+    \dot{u_{k}}(t) = \frac{1}{\tau} \left[b_{k} - \sum_{m \neq k}^{M}G_{k,m}a_{m}(t) - f_{\lambda}(a_{k}(t)) \right]
+\end{equation}
+
+where $\tau$ is a proportionality constant that represents the time constant of the dynamics.
+
+In order to have a complete discription of the model, we need to describe a relationship between $u$ and $a$. Earlier the $f_{\lambda}(a_{k}(t))$ term was described as a self inhibition term that encourages sparsity. Another way to enforce self inhibition is to introduce a membrane leak term. If we assign the internal state, $u_{k}(t)$, to this function:
+
+\begin{equation}\label{ufunca}
+    u_k(t) = f_{\lambda}(a_{k}(t)),
+\end{equation}
+
+then we can think of our neuron as a leaky integrator. We can also invert the function to get our neuron's output activity:
+
+\begin{displaymath}\label{athresh}
+    a_{k}(t) = f_{\lambda}^{-1}(u_{k}(t)) := T_{\lambda}(u_{k}(t))
+\end{displaymath}
+
+This gives us the LCA neuron update equation:
+\begin{equation}\label{udot}
+    \dot{u_{k}}(t) = \frac{1}{\tau} \left[\overbrace{b_{k}}^\text{Driving excitation} - \overbrace{\sum_{m \neq k}^{M}G_{k,m}a_{m}(t)}^\text{Lateral Inhibition} - \overbrace{u_{k}(t)}^\text{Leak} \right]
+\end{equation}
+
+or equivalently:
+
+\begin{displaymath}
+    \tau \dot{u_{k}}(t) + u_{k}(t) =  b_{k} - \sum_{m \neq k}^{M}G_{k,m}a_{m}(t)
+\end{displaymath}
+
+When the neuron's membrane potential passes over a threshold, defined by $T_{\lambda}(u_{k}(t)) = f_{\lambda}^{-1}(u_{k})$, it becomes active:
+
+\begin{equation}
+a_{k}(t) = T_{\lambda}(u_{k}(t))
+\end{equation}
+
+For this expression to perform gradient descent on the energy function, $a$ must be a monotonically increasing function of $u$.  Rozell et al. describe the relationship between the sparseness cost penalty, the neuron activity, and the internal membrane potential via a thresholding function. The thresholding function can take various forms that determine the exact nature of the sparseness penalty. For the $l_{1}$ penalty, we use a soft thresholding function:
+
+\begin{equation}
+    T_{\lambda}(u_{k}(t)) = \left\{
+    \begin{aligned}
+        u_{k}(t)+\lambda,\;\; &u_{k}(t)\; <\; -\lambda \\
+        0,\;\; &-\lambda < u_{k}(t)\; <\; \lambda \\
+        u_{k}(t)-\lambda,\;\; &u_{k}(t)\; >\; \lambda
+    \end{aligned}
+    \right.
+\label{thresholdfunc}
+\end{equation}
+
+Here $\lambda$ indicates the sparseness penalty tradeoff as well as the threshold that the membrane potential must surpass for the neuron to become active. An illustration of how one gets to the thresholding function from the $l_{1}$ penalty is given in figure \ref{lca_thresh}. With the internal state dynamics from equation \eqref{udot} and the thresholding function in equation \eqref{thresholdfunc}, we have defined a network that settles to a sparse code, $a$, that represents the input signal.
+
+\begin{figure}\label{lca_thresh}
+\centering
+\includegraphics[width=75mm]{./figures/lca_threshold_illustration.png}
+\caption{\textbf{Deriving the LCA thresholding function} Starting from a pictoral view of the $l_{1}$ cost function, one can derive the self inhibition term from equation \eqref{ufunca} and invert it to see the thresholding function described in equation \eqref{thresholdfunc}. Notice that the value of $\lambda$ dictates the range of allowable sub-threshold membrane potentials, $u_{k}$, before the neuron becomes active.}
+\end{figure}
+
+In addition to finding a sparse code, we are also interested in learning a set of dictionary elements, $\Phi$. This can be done by performing gradient descent on equation \eqref{energyfunc} using the coefficient values obtained with LCA. This yields
+
+\begin{equation}
+  \Delta \phi_{k} = \eta (S - \hat{S}) a_{k}
+\label{phiupdate}
+\end{equation}
+
+where $\eta$ is the learning rate and $\hat{S}$ is the image reconstruction. To recap, for a given image sample we first find our image code, $a$, for a fixed dictionary, $\Phi$, and then using that code to update the dictionary with equation \eqref{phiupdate}.
+
+\subsection{Convolutional LCA}
+
+LCA can be easily extended to a convolutional varient. Interestingly, overcompleteness is not dependent on the size of the patch.
+
+Convolutional LCA with overlap produce more stable code [https://docs.google.com/presentation/d/1KwbbopmrRVMpExG8Gen5XjE8VFnqUDT11EztMBgS97A/edit#slide=id.g985873ba_04295 slide 16]
+
+\subsection{Hierarchy Architecture is Emergent}
+\citet{rolfe2013discriminative} outline an unconstrained method for learning representations from natural scenes. Their result provides support for the assumptions made in the Sparse Coding model. They show that the encoding and decoding matrices learn to be approximately transposes of one another and that the lateral inhibition matrix learns to be the Gramian matrix from equation \ref{eq:lca}. What's more, when semi-supervised training is performed, the model learns an emergent hierarchical architecture. We will explore this further in chapter \ref{ch:applications}.
+[https://docs.google.com/presentation/d/1bW__4dYIlrrbiV55Y1WdKcI_jxYqCSPXVpQjnumrDfo/edit#slide=id.g13eab2f708_0_83 slide 11]
+
+\subsection{Relationship to Predictive Coding}
+LCA is very similar to the Rao & Ballard predictive coding model.
+
+\subsection{Relationship to ICA}
+LCA is an extension of ICA.
+
+\subsection{Postdictions from the Locally Competitive Algorithm}
+linear RFS, extra classical RFS
+
+\section{Model Comparisons}
+Comparing each of the above models.

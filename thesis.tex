@@ -1,0 +1,113 @@
+%% thesis.tex 2014/04/11
+%
+% Based on sample files of unknown authorship.
+%
+% The Current Maintainer of this work is Paul Vojta.
+
+\documentclass{ucbthesis}
+\usepackage{biblatex}
+\usepackage{amsmath,amssymb,euscript,mathrsfs,amsthm}
+
+% To compile this file, run "latex thesis", then "biber thesis"
+% (or "bibtex thesis", if the output from latex asks for that instead),
+% and then "latex thesis" (without the quotes in each case).
+
+% Double spacing, if you want it.  Do not use for the final copy.
+% \def\dsp{\def\baselinestretch{2.0}\large\normalsize}
+% \dsp
+
+% If the Grad. Division insists that the first paragraph of a section
+% be indented (like the others), then include this line:
+% \usepackage{indentfirst}
+
+\newcommand{\dxdt} { \frac{dx}{dt} }
+\newcommand{\dxdtn}[1] { \frac{d^{#1}x}{dt^{#1}}} % nth derivative
+\newcommand{\ddt} { \frac{d}{dt} }
+\newcommand{\argmin}{\operatornamewithlimits{argmin}}
+\newcommand{\tightoverset}[2]{\mathop{#2}\limits^{\vbox to -.6ex{\kern-0.75ex\hbox{$#1$}\vss}}}
+
+\bibliography{references}
+
+\hyphenation{mar-gin-al-ia}
+\hyphenation{bra-va-do}
+
+\begin{document}
+
+% Declarations for Front Matter
+
+\title{An in-depth analysis of the Locally Competitive Algorithm}
+\author{Dylan M Paiton}
+\degreesemester{Spring}
+\degreeyear{2019}
+\degree{Doctor of Philosophy}
+\chair{Professor Bruno Olshausen}
+\othermembers{Professor Jack Gallant\\
+  Professor Stanley Klein\\
+  Professor Trevor Darrell}
+\numberofmembers{4}
+% Previous degrees are no longer to be listed on the title page.
+% \prevdegrees{B.A. (University of Northern South Dakota at Hoople) 1978 \\
+%   M.S. (Ed's School of Quantum Mechanics and Muffler Repair) 1989}
+\field{Vision Science}
+% Designated Emphasis -- this is optional, and rare
+% \emphasis{Colloidal Telemetry}
+% This is optional, and rare
+% \jointinstitution{University of Western Maryland}
+% This is optional
+\campus{Berkeley}
+
+% For a masters thesis, replace the above \documentclass line with
+% \documentclass[masters]{ucbthesis}
+% This affects the title and approval pages, which by default calls this
+% document a "dissertation", not a "thesis".
+
+\maketitle
+% Delete (or comment out) the \approvalpage line for the final version.
+\approvalpage
+\copyrightpage
+
+\include{abstract}
+
+\begin{frontmatter}
+
+\begin{dedication}
+\null\vfil
+\begin{center}
+To my family\\\vspace{12pt}
+Thank you to my very best friends, my family, and my partner. I never could have made it through grad school without your unwavering support.
+\end{center}
+\vfil\null
+\end{dedication}
+
+% You can delete the \clearpage lines if you don't want these to start on
+% separate pages.
+
+\tableofcontents
+\clearpage
+\listoffigures
+\clearpage
+\listoftables
+
+\begin{acknowledgements}
+The work herein would not have been possible without constant feedback and contribution from my colleagues at the Redwood Center. Specifically, x, y, and z.
+\end{acknowledgements}
+
+\end{frontmatter}
+
+\pagestyle{headings}
+
+% (Optional) \part{First Part}
+
+\include{chap1}
+\include{chap2}
+\include{chap3}\label{ch:iso}
+\include{chap4}\label{ch:applications}
+\include{chap5}\label{ch:hierarchicalsc}
+\include{chap6}
+
+ \appendix
+ \chapter{appendix}
+
+\printbibliography
+
+\end{document}
