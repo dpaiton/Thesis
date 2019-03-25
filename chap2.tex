@@ -167,6 +167,21 @@ LCA is very similar to the Rao & Ballard predictive coding model.
 
 \subsection{Relationship to ICA}
 LCA is an extension of ICA.
+Sparse coding and ICA are related algorithms that employ similar linear generative models, but differ critically in their encoding processes. The image code produced by ICA is computed linearly, whereas sparse coding computes the code with a nonlinear inference process. Here we show that this nonlinear encoding process confers a considerable advantage in coding efficiency and orientation selectivity.
+
+ICA assumes the generative model:
+
+\begin{equation}
+\mathbf{s} = \mathbf{\Phi a}
+\end{equation}
+
+where $\mathbf{s}$ is an image, $\mathbf{\Phi}$ is a matrix of filters and $\mathbf{a}$ is a vector of activations that represents the neural code \cite{bell:1997gx}. The goal of ICA is to learn a set of statistically independent filters such that the input data can be reconstructed with minimal error. In ICA, the filter matrix is square and full rank and thus invertible. This allows the ICA activations for a given input to be computed directly as:
+
+\begin{equation}
+\mathbf{\hat{a}} = \mathbf{\Phi}^{-1}\mathbf{s}
+\end{equation}
+
+During inference, activations are computed with a single, linear, feed-forward operation. The filter matrix is learned via a non-linear, iterative optimization process to accurately reconstruct the input while maximizing the statistical independence of the filters as measured by the joint entropy of the activations. This process results in filters that are optimized for the higher-order statistical structure in natural scenes.
 
 \section{Alternative image coding models}
 
