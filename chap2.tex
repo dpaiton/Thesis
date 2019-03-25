@@ -1,20 +1,6 @@
 \chapter{Computational Models for Encoding Natural Images}
 
-\section{Classical Image Coding Models}
-
-\subsection{The Linear / Non-linear neuron model}
-Simoncelli, etc. Adding components.
-
-\subsection{Autoencoders}
-Autoencoders as a NN implementation of L/NL neurons.
-
-\subsection{Predictive Coding}
-Rao & Ballard PC.
-
-\subsection{ICA}
-Bell & Sejnowski ICA
-
-\section{Sparse Coding}
+\section{Sparse coding}
 In practice, sparse coding on images involves the tasks of learning a dictionary from data and given a dictionary finding an optimal sparse code for an input signal. Here we will say that an optimal sparse code gives the most faithful representation of the data using the fewest dictionary elements. The primary objective of sparse coding, as described in \cite{olshausen1997sparse}, is to encode input data (e.g. an image of a natural scene) in a generative framework, such that the data can be reconstructed from the code. Typically, we want the encoding to be of a higher dimensionality than the input image; that is to say we want our dictionary to be overcomplete.
 
 For an $N$-dimensional input signal (e.g. an $N$ pixel image), $S \in \mathbb{R}^{N}$, we want a dictionary of $M > N$ vectors, where each vector is of length $N$. The dictionary is a matrix $\Phi$ with dimensions $N \times M$. Each of the $M$ columns are dictionary elements, $\phi_{i}, i \in \{1,...,M\}$, and each dictionary element has a corresponding coefficient, $a_{i}, i \in \{1,...,M\}$, that we can assemble into a vector of activations. Our goal is to minimize an energy function that requires both a faithful and efficient representation of the data, in that it reconstructs the data well with the fewest number of active elements. We can express this mathematically as
@@ -164,24 +150,37 @@ In addition to finding a sparse code, we are also interested in learning a set o
 
 where $\eta$ is the learning rate and $\hat{S}$ is the image reconstruction. To recap, for a given image sample we first find our image code, $a$, for a fixed dictionary, $\Phi$, and then using that code to update the dictionary with equation \eqref{phiupdate}.
 
+\subsection{LCA neuron responses to natural images during inference}
+inference traces / losses
+
 \subsection{Convolutional LCA}
 
 LCA can be easily extended to a convolutional varient. Interestingly, overcompleteness is not dependent on the size of the patch.
 
 Convolutional LCA with overlap produce more stable code [https://docs.google.com/presentation/d/1KwbbopmrRVMpExG8Gen5XjE8VFnqUDT11EztMBgS97A/edit#slide=id.g985873ba_04295 slide 16]
 
-\subsection{Hierarchy Architecture is Emergent}
-\citet{rolfe2013discriminative} outline an unconstrained method for learning representations from natural scenes. Their result provides support for the assumptions made in the Sparse Coding model. They show that the encoding and decoding matrices learn to be approximately transposes of one another and that the lateral inhibition matrix learns to be the Gramian matrix from equation \ref{eq:lca}. What's more, when semi-supervised training is performed, the model learns an emergent hierarchical architecture. We will explore this further in chapter \ref{ch:applications}.
-[https://docs.google.com/presentation/d/1bW__4dYIlrrbiV55Y1WdKcI_jxYqCSPXVpQjnumrDfo/edit#slide=id.g13eab2f708_0_83 slide 11]
+\subsection{Postdictions from the LCA}
+linear RFS, extra classical RFS
 
-\subsection{Relationship to Predictive Coding}
+\subsection{Relationship to predictive coding}
 LCA is very similar to the Rao & Ballard predictive coding model.
 
 \subsection{Relationship to ICA}
 LCA is an extension of ICA.
 
-\subsection{Postdictions from the Locally Competitive Algorithm}
-linear RFS, extra classical RFS
+\section{Alternative image coding models}
 
-\section{Model Comparisons}
+\subsection{The linear / non-linear neuron model}
+Simoncelli, etc. Adding components.
+
+\subsection{Autoencoders}
+Autoencoders as a NN implementation of L/NL neurons.
+
+\subsection{Predictive coding}
+Rao & Ballard PC.
+
+\subsection{ICA}
+Bell & Sejnowski ICA
+
+\section{Model comparisons}
 Comparing each of the above models.
