@@ -1,12 +1,14 @@
-%% thesis.tex 2014/04/11
-%
-% Based on sample files of unknown authorship.
-%
-% The Current Maintainer of this work is Paul Vojta.
-
 \documentclass{ucbthesis}
 \usepackage{biblatex}
 \usepackage{amsmath,amssymb,euscript,mathrsfs,amsthm}
+\usepackage{hyperref}
+\usepackage{microtype}
+\usepackage{graphicx}
+\usepackage{subfigure}
+\usepackage{amsfonts}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{booktabs} % for professional tables
 
 % To compile this file, run "latex thesis", then "biber thesis"
 % (or "bibtex thesis", if the output from latex asks for that instead),
@@ -25,6 +27,21 @@
 \newcommand{\ddt} { \frac{d}{dt} }
 \newcommand{\argmin}{\operatornamewithlimits{argmin}}
 \newcommand{\tightoverset}[2]{\mathop{#2}\limits^{\vbox to -.6ex{\kern-0.75ex\hbox{$#1$}\vss}}}
+
+\DeclareCiteCommand{\citeyear}
+    {\usebibmacro{prenote}}
+    {\bibhyperref{\printfield{year}}\bibhyperref{\printfield{extrayear}}}
+    {\multicitedelim}
+    {\usebibmacro{cite:postnote}}
+
+\DeclareCiteCommand{\citeyearpar}[\mkbibparens]
+    {\usebibmacro{prenote}}
+    {\bibhyperref{\printfield{year}}\bibhyperref{\printfield{extrayear}}}
+    {\multicitedelim}
+    {\usebibmacro{cite:postnote}}
+
+\graphicspath{ {./figures/} }
+
 
 \bibliography{references}
 
