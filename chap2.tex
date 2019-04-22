@@ -14,7 +14,6 @@ For an $N$-dimensional input signal (e.g. an $N$ pixel image), $S \in \mathbb{R}
         \left( E =
             \overbrace{ \tfrac{1}{2} \| S - \hat{S} \|_{2}^{2} }^\text{Preserve Information} +
         \overbrace{ \lambda \sum\limits_{i=1}^{M}C(a_{i}) }^\text{Limit Activations} \right),
-\label{energyfunc}
 \end{equation}
 
 where $\hat{S} = \sum\limits_{i=1}^{M}\phi_{i}a_{i}$ is the image reconstruction, $\argmin\limits_{a, \Phi}$ tells us that we want to minimize the energy with respect to both the activations and the dictionary, and $||.||_2^2$ indicates the squared $l_2$ norm. In this energy function, we use $\lambda$ as a trade-off penalty between the reconstruction quality and the sparsity constraint. In practice we tune it to maximize network sparsity for a minimum accepted reconstruction quality. One popular choice for the cost function, $C(.)$, is the $l_1$ cost penalty, which is the sum of the absolute value of all activations:
