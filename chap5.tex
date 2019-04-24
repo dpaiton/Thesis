@@ -5,6 +5,11 @@
 
 
 \subsection{Hierarchy architecture is emergent}
+
+Ultimately, we aim to build an hierarchical general representation of natural scenes. A hierarchical model of natural scenes should produce a general representation of input data that spans all layers. The bottom of the hierarchy contains information about the details of the scene, and as one ascends the hierarchy, one should see a more general, abstract description. Information moves up the hierarchy in the form of inference and down the hierarchy as expectations. Resolving ambiguities at the top are easier as there are more regularities and there is more context. These should help inform inference in lower layers to resolve ambiguities about minute details of the scene.
+
+In the work of \citet{lee2003hierarchical}, they simplify the model by forcing each layer to only receive input from the layer below & above, as in a Markov chain. Expectations are propagated down to alter priors of lower layers in a dynamic, context-sensitive manner. Feedback connections influence the inference process, causing a layer to converge on an alternate solution that fits the expectations above. Although they use dynamic sampling algorithms to represent Bayesian inference, we believe it is possible to construct a version that is true to the theory and uses sparse coding as a core computational framework.
+
 \citet{rolfe2013discriminative} outline an unconstrained method for learning representations from natural scenes. Their result provides support for the assumptions made in the Sparse Coding model. They show that the encoding and decoding matrices learn to be approximately transposes of one another and that the lateral inhibition matrix learns to be the Gramian matrix from equation \ref{eq:lca}. What's more, when semi-supervised training is performed, the model learns an emergent hierarchical architecture. We will explore this further in chapter \ref{ch:applications}.
 [https://docs.google.com/presentation/d/1bW__4dYIlrrbiV55Y1WdKcI_jxYqCSPXVpQjnumrDfo/edit#slide=id.g13eab2f708_0_83 slide 11]
 
