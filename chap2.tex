@@ -3,34 +3,96 @@
 
 \section{Introduction}
 Motivation for sparse coding, taking generative approach, uncertainty, etc.
+Sparse coding is a generative model for explaining natural signals. The model has been implemented for coding several different signal modalities \parencite{placeholder} and related to multiple brain regions \parencite{placeholder}. However, here we will focus on coding of images in the context of computation being performed by layer 4 cells in V1.
 
-\section{A probablistic approach to image coding}
+We will begin this chapter with a probabilistic derivation for the sparse coding model. Importantly, this will make clear the various assumptions built into the model, which will be relevant for our interpretations of results in later chapters. The first section will get us to an energy function that a sparse coding algorithm would seek to minimize. The second section recapitulates the sparse coding model from an optimization perspective and outlines standard methods for inference and dictionary learning. Next, we will derive the Locally Competitive Algorithm, which is a neural network model designed to perform sparse inference. This network is the subject of the rest of the thesis. Finally, we will compare the LCA model to other popular neurally-inspired image coding models, namely Predictive Coding \parencite{rao1999predictive} and ICA \parencite{bell1997independent}.
+
+\section{A probabilistic approach for image coding}
+We aim to encode an incoming signal efficiently under the assumption that the signal is composed of a structured component and unstructured additive noise. We do this with sparse coding, which assumes a linear generative model:
+
+\begin{equation} \label{eq:ch2_generative_model}
+    s = \Phi a + \varepsilon,
+\end{equation}
+
+\noindent where $s$ is our input signal, $\Phi$ is an overcomplete (in that the number of columns in $\Phi$ is greater than the number of rows) dictionary of functions, $a$ is a row vector of activation coefficients, and $\varepsilon$ is Gaussian noise. For a given input signal, the task of finding an optimal set of coefficients is ill-posed. This is partially because the noise is unknown and therefore cannot be completely accounted for. Another reason is that the dictionary is overcomplete and thus non-orthogonal, resulting in an infinite number of possible combinations that are each equally valid representations. Following the work of \parencite{olshausen1996learning} and \parencite{karklin1999porbabilistic}, we will derive a probabilistic generative model for computing image codes with an optimality constraint in the form of sparsity. Additionally, we can follow a similar derivation to learn a set of dictionary elements that maximize coding efficiency.
+
+Our model assumes a prior probability over the images, $P(s)$, and the activity coefficients, $P(a)$. We also assume that the coefficient prior does not depend on the dictionary itself, that is $P(a|\Phi) = P(a)$. Although in practice the coefficients and dictionary will be jointly optimized, we can adhere to this assumption by fixing one variable while optimizing the other in an expectation-maximization like procedure. We specify the likelihood of an image under the model for a given state of coefficients as $P(s|a,\Phi)$. Conversely, given evidence in the form of an image sample, we can define the posterior as the conditional probability distribution of our coefficients given the image and model: $P(a|s,\Phi)$. Our goal is to maximize this posterior distribution, which gives us the most probable estimate of the coefficients. As is done in \parencite{karklin1999porbabilistic}, we can relate the likelihood and posterior using Bayes' rule:
+
+\begin{equation}\label{eq:ch2_bayes}
+    P(a|s,\Phi) \propto P(s|a,\Phi) P(a)
+\end{equation}
+
+The probability of the image under the model, $P(s|\Phi)$ is obtained by marginalizing over the internal states:
+
+\begin{equation}\label{eq:ch2_image_probability}
+    P(s|\Phi) = \int\partial a P(s|a,\Phi) P(a)
+\end{equation}
+
+In the sparse coding model we assume that the noise distribution is Gaussian. We justify this by assuming that the generative model can account for everything except for random, uncorrelated (i.e. independent) causes that combine in the limit to follow a Gaussian distribution. Under this assumption, we can specify our image likelihood:
+
+\begin{equation}\label{eq:ch2_image_likelihood}
+    P(s|a,\Phi) \propto e^{-\frac{1}{2\sigma_{i}^{2}}|s-\phi a|^{2}},
+\end{equation}
+\noindent where $\sigma$ is the standard deviation of the additive noise. Our goal is to encode the images as efficiently as possible, which we can define in terms of the entropy of the data: $\mathcal{L} \geq H(p) = -\sum p(x) log{p(x)}$, where $\mathcal{L}$ is the code-word length. If we assume that the mean of the image distribution exists at $\Phi a$, then the maximum entropy distribution (with infinite variance) is Laplacian, which implies a factorial distribution over our coefficients:
+
+\begin{equation}\label{eq:ch2_coefficient_prior}
+    P(a) \propto \prod_{i}\frac{1}{\lambda} e^{\frac{-|a_{i}|}{\lambda}},
+\end{equation}
+
+\noindent where $\lambda = \tfrac{1}{\sigma^{2}}$. Finally, because we are assuming the noise is Gaussian, we can impose an $L_{2}$ prior on the pixel dimension of the dictionary:
+
+\begin{equation}\label{eq:ch2_dictionary_prior}
+    P(\Phi_{i}) = \frac{1}{\sqrt{2\pi}\sigma^{2}}e^{\frac{-\sum_{j}|\Phi_{i,j}|^{2}}{\sigma^{2}}}
+\end{equation}
+
+To estimate the most likely coefficients we can maximize the posterior of the coefficients given the data and model by finding a minimum of the log-likelihood:
+
+\begin{align}\label{eq:ch2_min_log_likelihood}
+\begin{split}
+    \max_{a} p(a|s,\Phi) &= \max_{a}\left[\log{P(s|a,\Phi)} + \log{P(a)}\right] \\
+                         &= \min_{a}\frac{\lambda}{2}|s - \Phi a|^{2} + |a|
+\end{split}
+\end{align}
+
+Ideally, we would like to maintain a distribution of probable coefficients for a given image and model. However, we will only store the most likely coefficients, which we justify by assuming that the distribution is highly peaked and therefore the maximum of the distribution is the most probable.
+
+If we wish to find the optimal dictionary, then we will perform the same maximum-likelihood operation on equation \ref{eq:ch2_image_probability}. However, it is not tractable to integrate over the coefficients to find the marginals, so instead we use a maximum a-posteriori estimate, which approximates the area using the peak of the distribution. This is a fair estimate if the model is sure of the posterior, that is to say that $P(a|s,\Phi)$ truly follows a highly peaked distribution with heavy tails. Given this assumption, we define the log of the probability of the image under the model:
+
+\begin{equation}\label{eq:ch2_log_image_probability}
+    \log{P(s|\Phi)} = \log{\int P(s|a,\Phi)P(a)\partial a},
+\end{equation}
+
+\noindent and take the gradient with respect to our weights to give us a weight update rule:
+
+\begin{equation}\label{eq:ch2_probability_weight_update}
+    \nabla_{\Phi} \log{P(s|\Phi)} = \left< \left[s - \Phi a\right]a^{\top}\right>_{P(a|s,\Phi)}.
+\end{equation}
+
+The expectation in equation \ref{eq:ch2_probability_weight_update} tells us that we must do inference under the posterior. As we will see later, the weight and coefficient update rules can also be derived from the same energy function, which is defined as the negative log of the likelihood. The following sections give alternative derivations of the sparse coding model, which build from this probabilistic background towards a set of equations that can be optimized in a neural network framework.
+
 
 \section{Sparse coding}
-In practice, sparse coding on images involves the tasks of learning a dictionary from data and, given a dictionary, finding an optimal sparse code for an input signal. Here we will say that an optimal sparse code gives the most faithful representation of the data using the fewest dictionary elements. The primary objective of sparse coding, as described in \cite{olshausen1997sparse}, is to encode input data (e.g. an image of a natural scene) in a generative framework, such that the data can be reconstructed from the code. Typically, we want the encoding to be of a higher dimensionality than the input image; that is to say we want our dictionary to be overcomplete.
+In practice, sparse coding on images involves the tasks of learning a dictionary from data and, given a dictionary, finding an optimal sparse code for an input signal. We define an optimal sparse code as one that gives the most faithful representation of the data using the fewest dictionary elements. The primary objective of sparse coding, as described in \parencite{olshausen1997sparse}, is to encode input data (e.g. an image of a natural scene) in a generative framework, such that the data can be reconstructed from the code. Typically, we want the encoding to be of a higher dimensionality than the input image; that is to say we want our dictionary to be overcomplete.
 
-For an $N$-dimensional input signal (e.g. an $N$ pixel image), $S \in \mathbb{R}^{N}$, we want a dictionary of $M > N$ vectors, where each vector is of length $N$. The dictionary is a matrix $\Phi$ with dimensions $N \times M$. Each of the $M$ columns are dictionary elements, $\phi_{i}, i \in \{1,...,M\}$, and each dictionary element has a corresponding coefficient, $a_{i}, i \in \{1,...,M\}$, that we can assemble into a vector of activations. Our goal is to minimize an energy function that requires both a faithful and efficient representation of the data, in that it reconstructs the data well with the fewest number of active elements. We can express this mathematically as
+For an $N$-dimensional input signal (e.g. an $N$ pixel image), $s \in \mathbb{R}^{N}$, we want a dictionary of $M > N$ vectors, where each vector is of length $N$. The dictionary is a matrix $\Phi$ with dimensions $N \times M$. Each of the $M$ columns are dictionary elements, $\Phi_{i}, i \in \{1,...,M\}$, and each dictionary element has a corresponding coefficient, $a_{i}, i \in \{1,...,M\}$, that we can assemble into a vector of activations. Our goal is to minimize an energy function that requires both a faithful and efficient representation of the data, in that it reconstructs the data well with the fewest number of active elements. We can express this mathematically as
 
 \begin{equation}\label{eq:ch2_sparse_energy}
     \argmin\limits_{a, \Phi}
         \left( E =
-            \overbrace{ \tfrac{1}{2} \| S - \hat{S} \|_{2}^{2} }^\text{Preserve Information} +
+            \overbrace{ \tfrac{1}{2} \| s - \hat{s} \|_{2}^{2} }^\text{Preserve Information} +
         \overbrace{ \lambda \sum\limits_{i=1}^{M}C(a_{i}) }^\text{Limit Activations} \right),
 \end{equation}
 
-where $\hat{S} = \sum\limits_{i=1}^{M}\phi_{i}a_{i}$ is the image reconstruction, $\argmin\limits_{a, \Phi}$ tells us that we want to minimize the energy with respect to both the activations and the dictionary, and $||.||_2^2$ indicates the squared $l_2$ norm. In this energy function, we use $\lambda$ as a trade-off penalty between the reconstruction quality and the sparsity constraint. In practice we tune it to maximize network sparsity for a minimum accepted reconstruction quality. One popular choice for the cost function, $C(.)$, is the $l_1$ cost penalty, which is the sum of the absolute value of all activations:
+where $\hat{s} = \sum\limits_{i=1}^{M}\Phi_{i}a_{i}$ is the image reconstruction, $\argmin\limits_{a, \Phi}$ tells us that we want to minimize the energy with respect to both the activations and the dictionary, and $||.||_2^2$ indicates the squared $l_2$ norm. In this energy function, we use $\lambda$ as a trade-off penalty between the reconstruction quality and the sparsity constraint. Note that we have performed a change of variables from the previous section, to include the noise variance, $\sigma$ into a new $\lambda$ parameter that now modulates the $L_{1}$ cost as a Lagrange multiplier. In practice we tune it to maximize network sparsity for a minimum accepted reconstruction quality. One popular choice for the cost function, $C(.)$, is the $l_1$ cost penalty, which is the sum of the absolute value of all activations:
 
-%\begin{equation}
-\begin{align}\label{l1cost}
+\begin{align}\label{eq:ch2_l1_cost}
+\begin{split}
   &C(a_{i}) = |a_{i}| \\
   &\sum\limits_{i=1}^{M}C(a_{i}) = \sum\limits_{i=1}^{M}|a_{i}|
+\end{split}
 \end{align}
-%\end{equation}
 
-Depending on the choice of cost function, solving equation \ref{eq:ch2_sparse_energy} can be convex or non-convex. For the $l_{1}$ cost, it is non-convex. It is typically solved via alternating gradient descent, basis pursuit, or matching pursuit.
-In the original sparse coding paper, they compute the coefficient vector, $a$, using a projected stochastic gradient descent (PSGD).
-
-Rozell et al. \citeyearpar{rozell2008sparse} proposed solving the energy function using a neural network following dynamics governed by the energy gradient. It represents one of many approaches to finding a set of activations for a given input image and dictionary. It is explained in detail in the following section. It will be the basis of study for the remainder of the thesis.
+Depending on the choice of cost function, solving equation \ref{eq:ch2_sparse_energy} can be convex or non-convex. For the $l_{1}$ cost, it is non-convex. Previous work has solved this via alternating projected gradient descent \parencite{olshausen1997sparse}, basis pursuit denoising \parencite{chen2001atomic}, or matching pursuit \parencite{davis1997adaptive, rhen2007network, rebollo-neira2002Optimized}. The basis pursuit denoising variant is often accomplished using the iterative shrinkage and thresholding algorithm (ISTA) \parencite{daubechies2004iterative, beck2009fast}. Rozell et al. \citeyearpar{rozell2008sparse} proposed an alternative to ISTA using a neural network following dynamics governed by the energy gradient. The following section explains this alternative in detail.
 
 
 \section{The Locally Competitive Algorithm}
@@ -38,7 +100,7 @@ The Locally Competitive Algorithm (LCA) is a method for computing a sparse code 
 
 We wish for our neuron activations to minimize the energy function described in equation \eqref{energyfunc}. The standard way to do this would be to perform direct gradient descent on the energy function. To illustrate the derivative, we first express the energy function in subscript notation:
 
-\begin{equation}\label{indexenergyfunc}
+\begin{equation}\label{eq:ch2_indexed_energy_func}
     E(t) = \tfrac{1}{2} \sum\limits_{i=1}^{N} \left[ S_{i} - \sum\limits_{j=1}^{M}a_{j}(t) \Phi_{i,j} \right]^{2} + \lambda \sum\limits_{j=1}^{M} C(a_{j}(t))
 \end{equation}
 
@@ -204,7 +266,7 @@ ICA assumes the generative model:
 \mathbf{s} = \mathbf{\Phi a}
 \end{equation}
 
-where $\mathbf{s}$ is an image, $\mathbf{\Phi}$ is a matrix of filters and $\mathbf{a}$ is a vector of activations that represents the neural code \cite{bell:1997gx}. The goal of ICA is to learn a set of statistically independent filters such that the input data can be reconstructed with minimal error. In ICA, the filter matrix is square and full rank and thus invertible. This allows the ICA activations for a given input to be computed directly as:
+where $\mathbf{s}$ is an image, $\mathbf{\Phi}$ is a matrix of filters and $\mathbf{a}$ is a vector of activations that represents the neural code \parencite{bell:1997gx}. The goal of ICA is to learn a set of statistically independent filters such that the input data can be reconstructed with minimal error. In ICA, the filter matrix is square and full rank and thus invertible. This allows the ICA activations for a given input to be computed directly as:
 
 \begin{equation}
 \mathbf{\hat{a}} = \mathbf{\Phi}^{-1}\mathbf{s}

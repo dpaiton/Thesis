@@ -1,5 +1,7 @@
 \documentclass{ucbthesis}
-\usepackage{biblatex}
+
+% http://tug.ctan.org/info/biblatex-cheatsheet/biblatex-cheatsheet.pdf
+\usepackage[giveninits=true, style=authoryear, hyperref=true, maxbibnames=8, maxcitenames=2, sorting=nyt, uniquename=init]{biblatex}
 \usepackage{amsmath,amssymb,euscript,mathrsfs,amsthm}
 \usepackage{hyperref}
 \usepackage{microtype}
@@ -15,7 +17,7 @@
  \def\dsp{\def\baselinestretch{2.0}\large\normalsize}
  \dsp
 
-% If the Grad. Division insists that the first paragraph of a section
+% If the Grad. Division insists that the first pararaph of a section
 % be indented (like the others), then include this line:
 % \usepackage{indentfirst}
 
@@ -39,11 +41,12 @@
 
 \graphicspath{ {./figures/} }
 
-
-\bibliography{references}
-
 \hyphenation{mar-gin-al-ia}
 \hyphenation{bra-va-do}
+
+\AtEveryBibitem{\clearfield{month}{} \clearlist{language}{}}
+\DeclareNameAlias{sortname}{last-first}
+\bibliography{references}
 
 \begin{document}
 
@@ -119,9 +122,10 @@ The work herein would not have been possible without constant feedback and contr
 \include{chap5}\label{ch:hierarchicalsc}
 \include{chap6}
 
- \appendix
- \chapter{appendix}
+\appendix
+\chapter{appendix}
 
+\clearpage
 \printbibliography
 
 \end{document}
