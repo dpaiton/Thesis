@@ -208,7 +208,7 @@ For this expression to perform gradient descent on the energy function, $a$ must
 
 Here $\lambda$ indicates the sparseness penalty trade-off as well as the threshold that the membrane potential must surpass for the neuron to become active. An illustration of how one gets to the thresholding function from the $l_{1}$ penalty is given in figure \ref{fig:ch2_lca_thresh}. With the internal state dynamics from equation \eqref{eq:ch2_u_dot_full} and the thresholding function in equation \eqref{eq:ch2_lca_threshold_func}, we have defined a network that settles to a sparse code, $a$, that represents the input signal. For all of the work in this thesis, we will diverge from the implementation in \parencite{rozell2008sparse} and implement a rectified version of the thresholding function. That is, from equation \ref{eq:ch2_lca_threshold_func}, the last term for when $u_{k}(t) > \lambda$ is set to $T_{\lambda}(u_{k}(t))=0$. This adds a higher degree of nonlinearity, and is important for implementing hierarchical sparse coding models.
 
-\begin{figure}[ht]\label{fig:ch2_lca_thresh}
+\begin{figure}[h]\label{fig:ch2_lca_thresh}
 \centering %center using container as reference, instead of the whole text
 \includegraphics[width=0.5\textwidth]{lca_cost_graphs.png}
 \caption{\textbf{Deriving the LCA thresholding function} Starting from a pictorial view of the $l_{1}$ cost function, one can derive the self inhibition term from equation \eqref{eq:ch2_u_func_a} and invert it to see the thresholding function described in equation \eqref{eq:ch2_lca_threshold_func}. Notice that the value of $\lambda$ dictates the range of allowable sub-threshold membrane potentials, $u_{k}$, before the neuron becomes active.}
@@ -242,7 +242,7 @@ In future chapters we will occasionally use convolutional LCA to scale up experi
 
 \noindent where $\ast$ is convolution and $e = s - \hat{s}$ is the residual error. In this variant, the driving force to the neurons is the error, instead of the $b_{k}$ term in equation \ref{eq:ch2_lca_deda_simple}. This means that every neuron that is competing for the image reconstruction will contribute to driving neuron $k$, even if it is in a different convolutional position. The effects of this global competition across the image appear to give the model an advantage in terms of finding an energy minima and stability, which we demonstrate in figure \ref{fig:ch2_lca_conv_benefit}.
 
-\begin{figure}\label{fig:ch2_lca_conv_benefit}
+\begin{figure}[h]\label{fig:ch2_lca_conv_benefit}
     \centering
     \includegraphics[width=\textwidth]{figures/lca_conv_benefits.png}
     \caption{Convolutional LCA (overlap, green lines) has better encoding properties than patch-based LCA (no overlap, blue lines). This is likely an effect of global competition across the image that is afforded by the convolutional architecture. Note that the patch-based LCA is still sharing weights between patches; it is acting as if each patch was encoded independently with the same model. Left - For video input, we recorded the percent change in coefficients from one frame to the next as a function of the number of inference steps allowed on each frame. The convolutional variant is more stable earlier in inference, and equally stable after both variants have converged. Middle - Convolutional LCA settles to a lower mean squared error than the patch-based model. Right - Convolutional LCA is more sparse than the patch-based model. This figure was reproduced from unpublished work done with the Kenyon lab \citeyearpar{paiton2013deep}.}
@@ -262,7 +262,7 @@ As we will expand on in chapter \ref{ch:iso}, the LCA makes explicit predictions
 \subsection{Features learned}
 It has been shown previously that sparse coding will learn a dictionary of features that tile spatial position, frequency, and orientation \cite{olshausen1996emergence, olshausen1997sparse}. Here we reproduce this finding while also varying the overcompleteness of the model in figure \ref{fig:ch2_lca_overcompleteness_tiling}. We find that as overcompleteness increases, the density of the tiling also increases. Additionally, the model learns higher spatial frequency features and a more even distribution of orientations when more overcomplete. It is also interesting that the models tend to learn significantly more features that are aligned with the vertical and horizontal axis of the input images, which is well matched to image statistics \parencite{switkes1978spatial, torralba2003statistics}.
 
-\begin{figure}\label{fig:ch2_lca_overcompleteness_tiling}
+\begin{figure}[h]\label{fig:ch2_lca_overcompleteness_tiling}
     \centering
     \includegraphics[width=\textwidth]{figures/lca_overcompleteness_location_frequency_centers.png}
     \caption{LCA learns a feature set that tiles spatial positions, frequencies, scales, and orientations when trained on natural scenes. Here we demonstrate this while also varying overcompleteness. Each column is a level of overcompleteness for LCA trained on 16 by 16 pixel Fourier whitened \ref{sec:appendix_preprocessing} image patches. The columns each represent LCA with 2, 3, and 4 times more neurons from the top to bottom, respectively. The rows from left to right are the spatial positions, spatial frequency, and orientation of each function.}
@@ -271,22 +271,22 @@ It has been shown previously that sparse coding will learn a dictionary of featu
 \subsection{Inferring sparse codes of natural images with LCA}
 Inference is a critical component of the sparse coding model. It gives the model the ability to ``explain away'' causes of the input signals \parencite{olshausen1997sparse} and gives neurons a higher degree of selectivity (see chapter \ref{ch:iso}). Figure \ref{fig:ch2_lca_inference_loss} shows the values of the loss function in equation \ref{eq:ch2_sparse_energy} through inference, demonstrating that the total loss is reduced. Notice that the sparse loss starts at zero, indicating that none of the neurons are contributing to the reconstruction. At the beginning of inference, all of the neurons with a non-zero inner product with the input have an increase in membrane potential without any inhibition from other neurons. It is only after a neuron passes threshold that it starts inhibiting its neighbors. These sub-threshold dynamics can result in a better solution than the standard ISTA framework, which turns on all units with a non-zero inner product with the input at the first inference step \cite{rozell2008sparse}.
 
-\begin{figure}\label{fig:ch2_lca_inference_loss}
+\begin{figure}[h]\label{fig:ch2_lca_inference_loss}
     \centering
     \includegraphics[width=\textwidth]{figures/lca_inference_loss.png}
-    \caption{LCA inference minimizes the sparse coding energy function (equation \ref{eq:ch2_sparse_energy}. Black lines represent the mean of 50 natural scenes and the blue background represents the standard error of the mean.}
+    \caption{LCA inference minimizes the sparse coding energy function (equation \ref{eq:ch2_sparse_energy}). Black lines represent the mean of 50 natural scenes and the blue background represents the standard error of the mean.}
 \end{figure}
 
 Figure \ref{fig:ch2_lca_inference_traces} gives us an idea of the inference dynamics for the a subset of neurons in the LCA network. Each line in the trace plots represents a different term from equation \ref{eq:ch2_lca_deda_simple}. Nearly all of the traces follow nonlinear trajectories, and have interesting sub-threshold dynamics.
 
-\begin{figure}\label{fig:ch2_lca_inference_traces}
+\begin{figure}[h]\label{fig:ch2_lca_inference_traces}
     \centering
     \includegraphics[width=\textwidth]{figures/lca_inference_traces.png}
     \caption{Individual trace dynamics for LCA neurons. Shown are input and output traces for a subset out of 768 LCA neurons during inference. The input image is in the bottom left, and on the right is the corresponding weight vector for the neurons. Each line represents a term in equation \ref{eq:ch2_lca_deda_simple}. The grey bars on the left of each trace plot indicate relative scale of the vertical axis. A magenta boundary indicates that the neuron was active at the end of the inference period, and a black boundary indicates otherwise. A dotted boundary indicates that it became active or inactive in the last 20 percent of the inference process.}
 \end{figure}
 
 
-\section{Hard thresholded LCA has many energy minima}
+\subsection{Hard thresholded LCA has many energy minima}
 It is possible to define a variety of valid threshold functions for converging LCA dynamics. The two primary functions considered in \parencite{rozell2008sparse} are termed ``soft'' and ``hard'' thresholds, which approximate solutions to the $l_{1}$ and $l_{0}$ cost functions, respectively. Much of the work herein is focused on the soft threshold function, as described in \ref{eq:ch2_lca_threshold_func}, primarily for model simplicity. However, the hard thresholded variant is highly intriguing as it results in a higher degree of non-linearity and solves a harder optimization problem with many alternate local minima. The rectified hard thresholded LCA model behaves exactly as is described in section \ref{sec:ch2_lca}, except that the thresholding function has been changed to:
 
 \begin{equation}\label{eq:ch2_lca_hard_threshold_func}
@@ -300,19 +300,19 @@ It is possible to define a variety of valid threshold functions for converging L
 
 As is described in \parencite{rozell2008sparse}, this variant approximates the $l_0$ cost function for $C(\cdot)$ in equation \ref{eq:ch2_sparse_energy}. Hard thresholded LCA performs similarly to the soft thresholded variant, except that there is no longer a convex energy landscape with a single global minima. After some number of inference steps, the LCA model settles to a stable minima, but in \parencite{shainin2016sampling} we show that the minima reached by a convolutional, rectified, hard thresholded LCA is not a global minima. It is not clear how the amount of information differs between these minima. However, it has been proposed that the brain could represent likely events in a probabilistic framework \cite{lee2003hierarchical} and that sampling could be a mechanism for decoding signals in higher cortical areas \cite{hoyer2003interpreting}.
 
-To better understand the energy landscape, we sampled a number of approximately equivalent minima (in terms of energy) for sparse codes trained on the CIFAR10 dataset \parencite{krizhevsky2009learning}. We performed this sampling by allowing the network to settle to a minima for a given image, then perturbing the neuron activations with Gaussian noise, and allowing it to settle again. We measured the distances between fixed points by counting the number of neurons that changed between their activity, which is equivalent to the Hamming distance between binarized (changed or didn't change) vectors. Figure \ref{fig:ch2_lca_fixed_point_distances} shows that the Hamming distance from the original fixed point to the perturbed fixed point grows as we continue to perturb the network until it reaches a plateau. The figure also shows that the network \textit{always} settles on a different minima.
+To better understand the energy landscape, we sampled a number of approximately equivalent minima (in terms of energy) for sparse codes trained on the CIFAR10 dataset \parencite{krizhevsky2009learning}. We performed this sampling by allowing the network to settle to a minima for a given image, then perturbing the neuron activations with Gaussian noise, and allowing it to settle again. We measured the distances between fixed points by counting the number of neurons that changed their activity, which is equivalent to the Hamming distance between binarized (changed or didn't change) vectors. Figure \ref{fig:ch2_lca_fixed_point_distances} shows that the Hamming distance from the original fixed point to the perturbed fixed point grows as we continue to perturb the network until it reaches a plateau. The figure also shows that the network \textit{always} settles on a different minima.
 
-\begin{figure}\label{fig:ch2_lca_fixed_point_distances}
+\begin{figure}[h]\label{fig:ch2_lca_fixed_point_distances}
     \centering
-    \includegraphics[width=0.5\textwidth{figures/lca_fixed_point_distances.png}
+    \includegraphics[width=075\textwidth]{figures/lca_fixed_point_distances.png}
     \caption{The hard thresholded LCA model has a number of valid fixed points in terms of the energy defined in equation \ref{eq:ch2_sparse_energy}. If you allow the model to settle to a minima, then perturb the latent code with Gaussian noise, it settles to a different location. Left: The Hamming distance between codes from the original fixed point to the perturbed fixed point after many perturbations. Hamming distance is measured by assessing how many neurons changed their activity value. Right: Hamming distances between all pairs of fixed points for all perturbations. Note that all values are above 0, which indicates that the model always settled to a unique minima after perturbation. This figure was reproduced with permission from \parnecite{shainin2016sampling}.}
 \end{figure}
 
 In figure \ref{fig:ch2_lca_norms_and_acc}, we show that the $l_{0}$ sparsity of the activations improves as we continue to perturb the input while the reconstruction error remains the same, suggesting that it is finding better minima. To understand the information content of these minima, we trained two layer classifiers on the sparse codes produced after convergence. The first experiment was to average the fixed point vectors together. We show that the classification accuracy increases as we add more fixed points to the average, which implies that there is different information content per fixed point. The second experiment was to search the independent fixed points for whichever produced the highest confidence (in terms of minimum entropy of the classifier's output distribution) and use this single fixed point as input to the network. The right panel in figure \ref{fig:ch2_lca_norms_and_acc} shows that the classifier accuracy improves as we increase the number of candidates in the search. Additionally, we found that the number of perturbations to achieve a fixed point with highest confidence was highly variable (not shown).
 
-\begin{figure}\label{fig:ch2_lca_norms_and_acc}
+\begin{figure}[h]\label{fig:ch2_lca_norms_and_acc}
     \centering
-    \includegraphics[width=\textwidth{figures/lca_norms_acc.png}
+    \includegraphics[width=\textwidth]{figures/lca_norms_acc.png}
     \caption{Fixed points have different sparsity and contribute unique information for a classification task. Left: New fixed points after perturbing the hard thresholded LCA network tend to have better $l_{0}$ norm. The dark blue and green lines show that norms increase when we average together the codes from each perturbation, which is to be expected. The cyan and red curves show that as we continue to perturb the activations, the network settles on a minima with approximately equal $l_{1}$ norm and an improved $l_{0}$ norm. Middle: We construct an averaged vector from each fixed point and use that as input to a classifier network. The classifier accuracy improves as the number of vectors in the average grows, indicating there is additional information in the alternate fixed points. Right: Instead of averaging the fixed points, we search them to determine which one produces a minimum entropy output from the classifier. This fixed point is then used to determine the class label. The figure shows that as you increase the number of samples that are searched over, the classifier accuracy improves. This figure was reproduced with permission from \parencite{shainin2016sampling}.}
 \end{figure}
 
@@ -329,7 +329,7 @@ In figure \ref{fig:ch2_lca_norms_and_acc}, we show that the $l_{0}$ sparsity of 
 
 
 \subsection{Predictive coding}
-Here we will draw comparisons between the sparse coding model, as described in Olshausen \& Field 1997, \citeyearpar{olshausen1997sparse}, and the predictive coding model described in Rao and Ballard \citeyearpar{rao1999predictive}. The sparse coding encoder is a single layer predictive coding encoder with a linear synthesis function. This is made intuitive by comparing the LCA model, a variant of the sparse coding model, against the predictive coding model.
+Here we will draw comparisons between the sparse coding model, as described in Olshausen and Field \citeyearpar{olshausen1997sparse} and the predictive coding model described in Rao and Ballard \citeyearpar{rao1999predictive}. The sparse coding encoder is a single layer predictive coding encoder with a linear synthesis function. This is made intuitive by comparing the LCA model, a variant of the sparse coding model, against the predictive coding model.
 
 The objective of this investigation is to explore the encoding processes for sparse coding and predictive coding assuming that we are given a trained dictionary. In our sparse coding energy function (equation \eqref{eq:ch2_sparse_energy}), we use $\lambda$ as a trade-off penalty between the reconstruction quality and the sparsity constraint. In practice we tune it to maximize network sparsity for a minimum accepted reconstruction quality. In Olshausen and Field, \citeyearpar{olshausen1997sparse}, their choice of cost function, $C(.)$, specified a Cauchy distribution for the prior on $a$:
 
@@ -343,7 +343,7 @@ For a learned dictionary, to encode an input image we compute a coefficient vect
     - \frac{\partial E(t)}{\partial a_{k}(t)}
     =
         \sum\limits_{i}^{N} \Phi_{i,k} \left(S_{i} - \sum\limits_{j}^{M}a_{j}(t) \Phi_{i,j}\right) -
-        \lambda \sum\limits_{j}^{M}\frac{\partial C(a_{j}(t))}{\partial a_{k}(t)} \\
+        \lambda \sum\limits_{j}^{M}\frac{\partial C(a_{j}(t))}{\partial a_{k}(t)}
 \end{equation}
 
 A block diagram illustration of this encoding process is given in \ref{fig:ch2_lca_pc_comp}.
@@ -377,7 +377,7 @@ Again we can take the derivative of equation \eqref{eq:ch2_pc_energy_func} to ge
 
 Comparing equations \eqref{eq:ch2_pc_deda} and \eqref{eq:ch2_sc_deda_rewrite}, one can conclude that the two differences between the predictive coding model and sparse coding model is the (potential) use of a non-linear synthesis function and a second layer of processing. This is illustrated pictorially in figure \ref{fig:ch2_lca_pc_comp}.
 
-\begin{figure}\label{fig:ch2_lca_pc_comp}
+\begin{figure}[h]\label{fig:ch2_lca_pc_comp}
 \centering
     \includegraphics[width=\textwidth]{./figures/lca_pc_model_comparisons.png}
     \caption{\textbf{Model Comparisons} Sparse approximation can be performed via direct gradient descent on the energy function (Equation \ref{scenergyfunc}). This can be thought of as a dynamic process, as depicted here. Adding a non-linearity to the synthesis function results in a single layer of the predictive coding model. The full model, as described in \cite{rao1999predictive}, combines two such layers.}
