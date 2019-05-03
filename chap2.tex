@@ -330,6 +330,8 @@ In figure \ref{fig:ch2_lca_norms_and_acc}, we show that the $l_{0}$ sparsity of 
 %\subsection{The linear / non-linear neuron model}
 %Simoncelli, etc. Adding components.
 %
+%\subsubsection{LISTA}
+%Learned ISTA.
 %
 %\subsection{Autoencoders}
 %Autoencoders as a NN implementation of L/NL neurons.
@@ -377,7 +379,7 @@ Again we can take the derivative of equation \eqref{eq:ch2_pc_energy_func} to ge
 \begin{equation}\label{eq:ch2_pc_deda}
     - \frac{1}{2}\frac{\partial E}{\partial a_{k}}
     =
-        &\frac{1}{\sigma_{S}^{2}}\sum\limits_{i}^{N} \Phi_{i,k} \left(S_{i} - \sum\limits_{j}^{M}a_{j} \Phi_{i,j}\right) -
+        \frac{1}{\sigma_{S}^{2}}\sum\limits_{i}^{N} \Phi_{i,k} \left(S_{i} - \sum\limits_{j}^{M}a_{j} \Phi_{i,j}\right) -
         \frac{1}{\sigma_{td}^{2}}\sum\limits_{i}^{M}(a_{i}-a_{i}^{td}) -
         \lambda \sum\limits_{j}^{M}\frac{\partial C(a_{j})}{\partial a_{k}}
 \end{equation}
