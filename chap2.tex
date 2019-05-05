@@ -1,18 +1,18 @@
 \chapter{Computational Models for Encoding Natural Images}
 
 \section{Introduction}
-Sparse coding is a generative model for explaining natural signals. Although the model and motivating theory has been explored in other modalities, here we will focus on coding of images in the context of computation being performed by layer 4 (``simple'') cells in V1. We will begin this chapter with a probabilistic derivation for the sparse coding model. Importantly, this will make clear the various assumptions built into the model, which will be relevant for our interpretations of results in later chapters. The first section will get us to an energy function that a sparse coding algorithm would seek to minimize. The second section recapitulates the sparse coding model from an optimization perspective and notes standard methods for inference and dictionary learning. Next, we will derive the Locally Competitive Algorithm, which is a neural network model designed to perform sparse inference. This network is the subject of the rest of the thesis. Finally, we will compare the LCA model to other popular neurally-inspired image coding models, namely Predictive Coding \parencite{rao1999predictive} and ICA \parencite{bell1997independent}.
+Sparse coding is a generative model for explaining natural signals. In other words, it models the joint probability distribution between natural signals and a latent code such that it is able to generate natural signals from the code. Although the model and motivating theory has been explored in other modalities, here we will focus on coding of images in the context of computation being performed by layer 4 (``simple'') cells in V1. We will begin this chapter with a probabilistic derivation for the sparse coding model. Importantly, this will make clear the various assumptions built into the model, which will be relevant for our interpretations of results in later chapters. The first section will get us to an energy function that a sparse coding algorithm would seek to minimize. The second section recapitulates the sparse coding model from an optimization perspective and notes standard methods for inference and dictionary learning. Next, we will derive the Locally Competitive Algorithm, which is a neural network model designed to perform sparse inference. This network is the subject of the rest of the thesis. Finally, we will compare the LCA model to other popular neurally-inspired image coding models, namely Predictive Coding \parencite{rao1999predictive} and ICA \parencite{bell1997independent}.
 
 \section{A probabilistic approach for image coding}
 As was explained in chapter \ref{ch:intro}, the signal coming from the two-dimensional retinas is incomplete and the problem of inferring the exact three-dimensional structure of the world from that signal is impossible. However, some solutions are more likely than others and ecological pressure encourages brains to perceive highly likely solutions. If population activity in the brain represents possible hypotheses about the world, then we want to model it in a probabilistic, Bayesian framework. This section derives such a framework and shows that sparse coding approximately solves it.
 
-We aim to encode an incoming signal efficiently under the assumption that the signal is composed of a structured component and unstructured additive noise. We do this with sparse coding, which assumes a linear generative model:
+We aim to encode an incoming signal efficiently under the assumption that the signal is composed of structured components and unstructured additive noise. We do this with sparse coding, which assumes a linear generative model:
 
-\begin{equation} \label{eq:ch2_generative_model}
+\begin{equation} \label{eq:ch2_sparse_generative_model}
     s = \Phi a + \varepsilon,
 \end{equation}
 
-\noindent where $s$ is our input signal, $\Phi$ is an overcomplete (in that the number of columns in $\Phi$ is greater than the number of rows) dictionary of functions, $a$ is a row vector of activation coefficients, and $\varepsilon$ is Gaussian noise. For a given input signal, we must solve the ill-posed task of inferring an optimal set of coefficients. The problem is difficult in part because the noise is unknown and therefore cannot be completely accounted for. Another reason is that the dictionary is overcomplete and thus non-orthogonal, resulting in an infinite number of possible combinations that are each equally valid representations. Following the works of Olshausen and colleagues \parencite{olshausen1996learning, olshausen2003principles, karklin1999porbabilistic}, we will derive a probabilistic generative model for computing image codes. Additionally, we can follow a similar derivation to learn a dictionary that maximizes coding efficiency. This gives us a principled and extendable foundation from which we can derive sparse coding and similar models.
+\noindent where $s$ is our input signal, $\Phi$ is an overcomplete (in that the number of columns in $\Phi$ is greater than the number of rows) dictionary of functions, $a$ is a row vector of activation coefficients, and $\varepsilon$ is Gaussian noise (which we justify below). For a given input signal, we must solve the ill-posed task of inferring an optimal set of coefficients. The problem is difficult in part because the noise is unknown and therefore cannot be completely accounted for. Another reason is that the dictionary is overcomplete and thus non-orthogonal, resulting in an infinite number of possible combinations that are each equally valid representations. Following the works of Olshausen and colleagues \parencite{olshausen1996learning, olshausen2003principles, karklin1999porbabilistic}, we will derive a probabilistic generative model for computing image codes. Additionally, we can follow a similar derivation to learn a dictionary that maximizes coding efficiency. This gives us a principled and extendable foundation from which we can derive sparse coding and similar models.
 
 Our model assumes a prior probability over the images, $P(s)$, and the activity coefficients, $P(a)$. We also assume that the coefficient prior does not depend on the dictionary itself, that is $P(a|\Phi) = P(a)$. Although in practice the coefficients and dictionary will be jointly optimized, we can adhere to this last assumption by fixing one variable while optimizing the other in an expectation-maximization like procedure. We specify the likelihood of an image under the model for a given state of coefficients as $P(s|a,\Phi)$. Conversely, given evidence in the form of an image sample, we can define the posterior as the conditional probability distribution of our coefficients given the image and model: $P(a|s,\Phi)$. Our goal is to maximize this posterior distribution, which gives us the most probable estimate of the coefficients. As is done in \parencite{karklin1999porbabilistic}, we can relate the likelihood and posterior using Bayes' rule:
 
@@ -53,7 +53,7 @@ Note that in the final step we dropped a constant term that is equal to the numb
 
 \begin{align}\label{eq:ch2_min_log_likelihood}
 \begin{split}
-    \max_{a} p(a|s,\Phi) &= \max_{a}\left[\log{P(s|a,\Phi)} + \log{P(a)}\right] \\
+    \max_{a} P(a|s,\Phi) &= \max_{a}\left[\log{P(s|a,\Phi)} + \log{P(a)}\right] \\
                          &= \min_{a}\frac{\lambda}{2}|s - \Phi a|^{2} + \sum_{i}|a_{i}|.
 \end{split}
 \end{align}
@@ -93,14 +93,11 @@ For an $N$-dimensional input signal (e.g. an $N$ pixel image), $s \in \mathbb{R}
 
 \noindent where $\hat{s} = \sum\limits_{i=1}^{M}\Phi_{i}a_{i}$ is the image reconstruction, $\argmin\limits_{a, \Phi}$ tells us that we want to minimize the energy with respect to both the activations and the dictionary, and $||\cdot||_2^2$ indicates the squared $l_2$ norm. In this energy function, we use $\lambda$ as a trade-off penalty between the reconstruction quality and the sparsity constraint. Note that we have performed a change of variables from the previous section, to include the noise variance, $\sigma$ into a new $\lambda$ parameter that now modulates the $L_{1}$ cost as a Lagrange multiplier. In practice we tune it to maximize network sparsity for a minimum accepted reconstruction quality. One popular choice for the cost function, $C(\cdot)$, is the $l_1$ cost penalty, which is the sum of the absolute value of all activations:
 
-\begin{align}\label{eq:ch2_l1_cost}
-\begin{split}
-  &C(a_{i}) = |a_{i}| \\
-  &\sum\limits_{i=1}^{M}C(a_{i}) = \sum\limits_{i=1}^{M}|a_{i}|.
-\end{split}
-\end{align}
+\begin{equation}\label{eq:ch2_l1_cost}
+  \sum\limits_{i=1}^{M}C(a_{i}) = \sum\limits_{i=1}^{M}|a_{i}|.
+\end{equation}
 
-Depending on the choice of cost function, solving equation \eqref{eq:ch2_sparse_energy} can be convex or non-convex. For the $l_{1}$ cost, it is non-convex. Previous work has solved this via alternating projected gradient descent \parencite{olshausen1997sparse} or basis pursuit denoising \parencite{chen2001atomic}. The basis pursuit denoising variant is often accomplished using the iterative shrinkage and thresholding algorithm (ISTA) \parencite{daubechies2004iterative, beck2009fast}. Rozell et al. \citeyearpar{rozell2008sparse} proposed an alternative to ISTA using a neural network following dynamics governed by the energy gradient called the Locally Competitive Algorithm (LCA). The following section explains this alternative in detail. It is also possible to consider an $l_{0}$ like cost, which measures the total number of neurons active. This can be approximately solved by matching pursuit \parencite{davis1997adaptive, rehn2007network, rebollo2002optimized}, or with a particular variant of the LCA (see section \ref{sec:ch2_lca_properties}).
+Depending on the choice of cost function, solving equation \eqref{eq:ch2_sparse_energy} can be convex or non-convex. For the $l_{1}$ cost, it is convex. Previous work has solved this via alternating projected gradient descent \parencite{olshausen1997sparse} or basis pursuit denoising \parencite{chen2001atomic}. The basis pursuit denoising variant is often accomplished using the iterative shrinkage and thresholding algorithm (ISTA) \parencite{daubechies2004iterative, beck2009fast}. Rozell et al. \citeyearpar{rozell2008sparse} proposed an alternative to ISTA using a neural network following dynamics governed by the energy gradient called the Locally Competitive Algorithm (LCA). The following section explains this alternative in detail. It is also possible to consider an $l_{0}$ like cost, which measures the total number of neurons active and is non-convex. This can be approximately solved by matching pursuit \parencite{davis1997adaptive, rehn2007network, rebollo2002optimized}, or with a particular ``hard thresholded'' variant of the LCA (see section \ref{sec:ch2_lca_properties}).
 
 
 \section{The Locally Competitive Algorithm}\label{sec:ch2_lca}
@@ -274,6 +271,17 @@ It has been shown previously that sparse coding will learn a dictionary of featu
     \caption{\textbf{Features learned with LCA.} LCA learns a feature set that tiles spatial positions, frequencies, scales, and orientations when trained on natural scenes. Here we demonstrate this while also varying overcompleteness. Each column is a level of overcompleteness for LCA trained on 16 by 16 pixel Fourier whitened \ref{sec:appendix_preprocessing} image patches. The columns each represent LCA with 2, 3, and 4 times more neurons from the top to bottom, respectively. The rows from left to right are the spatial positions, spatial frequency, and orientation of each function.}
 \end{figure}
 
+\begin{figure}
+    \centering
+    \includegraphics{}
+    \caption{Caption}
+    \label{fig:my_label}
+\end{figure}
+
+%%% TODO
+%% Fix hamming distance for l0 sampling project
+%% Angle histograms
+
 \subsection{Inferring sparse codes of natural images with LCA}
 Inference is a critical component of the sparse coding model. It gives the model the ability to ``explain away'' causes of the input signals \parencite{olshausen1997sparse} and gives neurons a higher degree of selectivity (see chapter \ref{ch:iso}). Figure \ref{fig:ch2_lca_inference_loss} shows the values of the loss function in equation \ref{eq:ch2_sparse_energy} through inference, demonstrating that the total loss is reduced. Notice that the sparse loss starts at zero, indicating that none of the neurons are contributing to the reconstruction. At the beginning of inference, all of the neurons with a non-zero inner product with the input will increase their membrane potential without any inhibition from other neurons. It is only after a neuron passes threshold that it starts inhibiting its neighbors. These sub-threshold dynamics can result in a better solution than the standard ISTA framework, which turns on all units with a non-zero inner product with the input at the first inference step \cite{rozell2008sparse}.
 
@@ -403,8 +411,8 @@ Sparse coding and ICA are related algorithms that employ similar linear generati
 
 ICA assumes the generative model:
 
-\begin{equation}
-\mathbf{s} = \mathbf{\Phi a}
+\begin{equation}\label{eq:ch2_ica_generative_model}
+  \mathbf{s} = \mathbf{\Phi a}
 \end{equation}
 
 where $\mathbf{s}$ is an image, $\mathbf{\Phi}$ is a matrix of filters and $\mathbf{a}$ is a vector of activations that represents the neural code \parencite{bell1997independent}. The goal of ICA is to learn a set of statistically independent filters such that the input data can be reconstructed with minimal error. In ICA, the filter matrix is square and full rank and thus invertible. This allows the ICA activations for a given input to be computed directly as:
@@ -418,6 +426,8 @@ During inference, activations are computed with a single, linear, feed-forward o
 Sparse coding, however, has a highly non-linear encoding process. The overall optimization procedure involves a fast inner loop in which the coefficients are computed for each data vector and a slower outer loop in which the basis functions are adapted to the statistics of the entire dataset. In the inner loop, coefficients are computed considering the prior on their expected distribution. In ICA, however, the prior plays no role in determining the coefficients, but it does still play an important role in the learning the basis functions.
 
 The ICA learning algorithm is simpler and faster than the sparse coding algorithm because the encoding can be computed from the data in a single feedforward pass. The independent component analysis algorithm of Bell and Sejnowski \citeyearpar{bell1997independent} is formally equivalent to maximum likelihood estimation in the case of no noise and a square system (the dimensionality of the output is equal to the dimensionality of the input). It is easy to generalize this to the case when the number of outputs is less than the number of inputs, but harder the other way around. When the number of outputs is greater than the effective dimensionality of the input of non zero eigenvalues of the input covariance matrix then the extra dimensions of the output will simply drop out \parencite{livezey2016degeneracy, le2011ica}. While this does not pose a problem for blind separation problems where the number of independent sources is less than or equal to the number of mixed signals, it will become a concern in the representation of images, where overcompleteness is a desirable feature \parencite{simoncelli1991shiftable}. The main difference between the Olshausen and Field \citeyearpar{olshausen1996emergence} sparse coding model and the ICA algorithm of Bell and Sejnowski \citeyearpar{bell1997independent} is in the simplifying assumptions they make in order to deal with the intractable integration problem posed by finding the set of basis functions that maximize the likelihood of the inputs given the model defined by those basis functions. Olshausen and Field’s algorithm assumes low-noise and thus a peaky, unimodal distribution on the joint probability between the image and the sparse code given the model in order to justify evaluating it at the maximum (MAP), whereas Bell and Sejnowski limit the dimensionality of the code to equal the dimensionality of the input and also assume no noise so that the integral becomes tractable and compute it analytically.
+
+% BF learned with ICA vs complete LCA ; LCA is still non-linear encoding when complete.
 
 \section{Conclusion}
 In this chapter we derived the LCA from a probabilistic perspective. We then showed the features learned by LCA when trained on natural scenes and highlighted some interesting properties of the inference process. Finally, we compared LCA to alternative image coding models. In the next chapters we will extend the LCA model to a semi-supervised learning framework, a hierarchical framework, and then demonstrate how a geometric analysis technique can be used to explain LCA's high degree of robustness to noise and selectivity when compared to alternative models.

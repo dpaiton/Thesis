@@ -496,8 +496,8 @@ S &\rightarrow \text{Identity} - D^TD
 \subsubsection{Introduction}
 \noindent Here we will describe a model for generating hierarchical representations of input scenes. First we add the supervised objective:
 
-\begin{equation} \label{semi_supervised_energy}
-\argmin\limits_{a, \phi}, W}
+\begin{equation}\label{semi_supervised_energy}
+\argmin\limits_{a, \phi, W}
         \left( 
             \overbrace{ \tfrac{1}{2} \| I - \phi a \|_{2}^{2} }^\text{Preserve Information} +
         \overbrace{ \lambda C(a) }^\text{Limit Activations}  +
