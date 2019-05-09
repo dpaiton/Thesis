@@ -220,6 +220,8 @@ In addition to finding a sparse code, we are also interested in learning a set o
 
 \noindent where $\eta$ is the learning rate and $\hat{s}$ is the image reconstruction. To recap, for a given image sample we first find our image code, $a$, for a fixed dictionary, $\Phi$, and then using that code to update the dictionary with equation \eqref{eq:ch2_phi_update}.
 
+% TODO diagrams comparing feed-forward network to LCA network
+%https://docs.google.com/presentation/d/1Vzk_fVGO-ERQDjKWRvzuHpV6YGwUriD6NyJNpf-WbVE/edit#slide=id.g4f9127c786_0_76
 
 \subsection{The Convolutional LCA}
 In this thesis, unless otherwise noted, it should be assumed that we are using the traditional, fully-connected variant of the LCA. The LCA can be easily extended to a convolutional variant. In previous sections, we described the model as being \textit{fully connected}, in that each neuron was connected to every pixel in the input, which was defined as square image patches with typically around 12 pixels on a side. To scale this up to larger images we can redefine the LCA as convolutional. There are benefits to convolutional over the fully-connected LCA: it is more amenable GPU architectures, it converges to lower minima, and it is more stable when encoding video. However, downsides are that it no longer has a straight forward analog hardware implementation and it diverges from the type of connectivity we see in the brain. A possible better alternative to convolution would be to use local (i.e. tiled) connectivity, as was done in \parencite{le2011building} and \parencite{ngiam2010tiled}. At the time of writing we are unaware of any attempt to use this type of connectivity with the LCA.
