@@ -1,30 +1,184 @@
 \chapter{Robustness, Efficiency, and Selectivity of the LCA}
 
-\section{Iso-response contours predict adversarial attack directions}\label{sec:ch4_adv_defense}
+\section{Introduction}
+In this chapter we characterize the response geometry of neurons by plotting their iso-response contours.
+We build on work from David Field's lab \parencite{golden2016conjectures,vilankar2017selectivity} and show that the LCA exhibits curved iso-response contours when trained on natural images and the MNIST dataset.
+This curvature is a result of population nonlinear computations provided by the LCA's lateral inhibitory connectivity and indicates improved selectivity against stimulus perturbations that are orthogonal the neuron's feed-forward weights.
+First we directly measure the network's selectivity to full-field oriented grating stimulus and show improved performance over linear and pointwise-nonlinear networks.
+Next we provide evidence supporting the hypothesis that improved selectivity results in a more efficient code of natural images by demonstrating superior performance by the LCA when compared to the ICA or PCA transforms using the rate-distortion framework.
+Finally, we propose that this selectivity forces adversarial perturbation vectors to have angles that are more in line with data dimensions, producing more semantically meaningful perturbations.
+We develop an analytic argument to support this claim for untargeted single-neuron adversarial attacks.
+Furthermore, we demonstrate by experiment that our method successfully improves robustness to adversarial attacks for a classifier trained on our model's outputs.
+We contribute a novel perspective for understanding adversarial attacks and population nonlinear networks. 
 
-\subsection{Introduction}
-Here, drawing from the architecture and function of brains, we propose that a population nonlinear network with lateral inhibitory connectivity in its hidden layer forces adversarial perturbation vectors to have angles that are more in line with data dimensions, producing more semantically meaningful perturbations. We develop an analytic argument to support this claim for untargeted single-neuron adversarial attacks. Furthermore, we demonstrate by experiment that our method successfully improves robustness to adversarial attacks for a classifier trained on our model's outputs. The contribution of our work is a novel perspective for understanding adversarial attacks and population nonlinear networks.
-%TODO: Add stuff about the rest of the stuff here
-%TODO: Switch phi to Phi
+\section{Measuring iso-response contours}\label{sec:ch4_iso_contours}
+Inferring causes from natural signals is a challenging problem faced by biological vision systems.
+For artificial vision, the neural network community has largely tackled this problem using feedforward discriminative models.
+An alternative approach is to use generative models, in which the network must attempt to explain data in terms of an internal model of the world.
+In biological neural networks (BNNs) we see a preponderance of evidence that individual neurons are highly non-linear, recurrent, and laterally connected.
+The LCA is a generative model with lateral connectivity and recurrent inference that exhibits a variety of linear \parencite{olshausen1996emergence} and non-linear receptive field effects \parencite{zhu2013visual} that are well matched to biological neurons.
+Many of these effects can be explained using the model neuron’s iso-response contours - an experimental method for determining stimulus combinations that result in equal activation from recorded neurons \parencite{golden2016conjectures}.
+In the brain, the atomic unit of computation is generally considered to be the neuron, but most deep learning research has eschewed the individual neuron, possibly obfuscating the connections between BNNs and ANNs.
+We compare the iso-response contours of feed-forward, pointwise nonlinear discriminative and generative network architectures against more biologically-consistent population nonlinear generative network architectures.
+Pointwise nonlinearities are the more traditional form of nonlinearities and are seen in nearly all deep neural network architectures and computational neuroscience models.
+They are defined as nonlinearities that are a function of only a single neuron in a layer and include rectification, sigmoid, and hyperbolic tangent.
+Population nonlinearities represent the alternative class, where the nonlinearity output is a function of multiple neurons in a set.
+These include divisive normalization \parencite{carandini2012normalization, balle2016end} and the network nonlinearity present in sparse coding \parencite{rozell2008sparse, olshausen1997sparse}.
+
+Consider that a $P$-pixel image can be thought of as a single point in $\mathbb{R}^{P}$.
+To measure a target neuron's iso-response contours, we first choose a two-dimensional cross section (or plane) in the $P$-dimensional space that is defined by two orthogonal vectors.
+For much of the work herein, we will use the target neuron's feed-forward weights as one of the two vectors.
+To determine the second axis of our image plane, we start by finding another neuron’s weight vector that has a nonzero inner-product with our target neuron’s weight vector (and thus they are not orthogonal).
+Then, to get an orthonormal basis, we use the Gram-Schmidt process to find a vector orthogonal to our target neuron, but coplanar with our second neuron.
+For competitive networks like the LCA, this method increases the likelihood of competition between neurons and thus increases the curvature. 
+Each point in the 2-D plane can be injected back into the image space and will have a high degree of correspondence to relevant data features.
+In figure \ref{fig:ch4_iso_contours} we demonstrate contours for four classes of nonlinearities.
+The contours produced by linear, rectified, and sigmoid nonlinear neurons are all straight and orthogonal to the target neuron's weight vector.
+This will be true for all pointwise nonlinear neurons because the nonlinearity is applied after a linear projection, which we will describe in much more detail in section \ref{sec:ch4_adv_defense}
+
+%TODO: Fix this figure - LCA curve is using MNSIT digits!
+\begin{figure}[h]
+    %\vskip -0.05in
+    \centering
+    \includegraphics[width=0.5\textwidth]{figures/iso_contour_comparison.png}
+    %\vskip -0.3in
+    \caption{\textbf{Empirically measured iso-response contours.} A fine sampling of points in a 2D plane are injected into the high dimensional image space and used as inputs to a target model neuron, $a_{k}$. The color value indicates a binned normalized response magnitude of the $k^{\text{th}}$ neuron. The red arrow is the weight vector for the neuron, $\Phi_{k}$. The white arrow is an alternate neuron's weight vector.}
+    \label{fig:ch4_iso_contours}
+\end{figure}
+
+It is important to determine an individual neuron’s response contours for a large number of planes to gain insight into its high-dimensional response geometry.
+We propose two different methods for choosing image planes.
+For both methods, we define one axis as the target neuron's weight vector.
+The first method to find the orthogonal axis is to iteratively apply the process we described above for each other neuron in the layer.
+For the second method, we compute a set of random vectors that are orthogonal to the target neuron’s weight vector.
+We then estimate the curvature in each plane found via these two methods, which allows us to better understand the neuron’s high-dimensional iso-response geometry.
+Figure \ref{fig:ch4_iso_contour_lca_hists} demonstrates that LCA neurons have negative curvature in nearly all planes tested.
+Thus, most orthogonal perturbations from a neuron's weight vector will result in a decrease in its activation.
+This is an important quality that we desire from our model neurons.
+In visual neuroscience, we often use the neurons linear receptive field (in our model that is represented by its weight vector) to represent the stimulus that the neuron is selective for.
+With a pointwise nonlinear neuron model, it is possible to deviate away from its weight vector in many different directions without changing the neuron's response.
+LCA neurons, on the other hand, have a higher degree of selectivity to perturbations away from their receptive field.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=\textwidth]{figures/iso_contour_lca_hists.png}
+    \caption{\textbf{LCA neurons have high-dimensional exo-origin curvature.} The histogram shows second order coefficients for polynomial fits to the lines in the middle plot. Negative coefficients indicate exo-origin curvature, which tells us that LCA neurons exhibit exo-origin curvature in almost all orthogonal directions tested. The target neuron was randomly selected from a 2x overcomplete LCA model trained on the MNIST dataset with z-score (zero mean, unit standard deviation) preprocessing. We replicated these results for many random neurons. See text for details about random versus targeted directions.}
+    \label{fig:ch4_iso_contour_lca_hists}
+\end{figure}
+
+In the work of \parencite{vilankar2017selectivity}, they argue that networks that have iso-response contours that are bent away from the origin (exo-origin) will have neurons with a higher degree of selectivity than those without such curvature. In the following section, we provide supporting evidence by comparing the orientation selectivity of the LCA against linear and pointwise nonlinear neuron models. We also show that the LCA is more efficient than linear encoding models with oriented receptive fields, which we argue is a result of the improved selectivity.
+
+%TODO: Make the point more clear that bent contours facilitate more selective & more efficient codes. Maybe include schematic slides from oxyopia talk?
+%https://docs.google.com/presentation/d/1Vzk_fVGO-ERQDjKWRvzuHpV6YGwUriD6NyJNpf-WbVE/edit#slide=id.g50750b3c61_0_158
+%TODO:
+% read & cite vilankar2017selectivity
+% Move over figures from oxyopia talk
+% bent contours give neurons selectivity
+% Add discussion about the type of nonlinearity (i.e. not just nonlinear, but population nonlinear) being important as well
+%TODO: Include cross-orientation results?
+%To assess the degree of orientation selectivity for ICA neurons, we replicate the cross-orientation suppression experiment performed by \parencite{zhu2013visual} with both sparse coding and ICA networks.
+\section{Orientation selectivity and efficient coding}\label{sec:ch4_selectivity_efficiency}
+A longstanding hypothesis in sensory neuroscience proposes that a primary function of early sensory processing is to form an efficient, redundancy-reduced code of the input that maximizes the brain's limited computational and biological resources while making explicit the statistical structure of the input \parencite{barlow2001redundancy}
+This hypothesis predicts that the response properties of sensory neurons should be adapted to the statistical structure of their input.
+In support of this hypothesis, a number of the response properties of visual neurons have been reproduced by optimizing redundancy-reducing linear transformations on natural images \parencite{atick1990towards}.
+For example, a symmetric decorrelation transformation of natural images yields center-surround receptive fields \parencite{atick1990towards}, and Principal Component Analysis (PCA) applied to color images yields the luminance, red-green, and blue-yellow channel observed in the opponent color coding of retinal ganglion cells \parencite{ruderman1998statistics, buchsbaum1983trichromacy}.
+When higher-order correlations are additionally reduced, localized, oriented, and band-pass filters that resemble the orientation-selective receptive fields in V1 simple cells emerge \parencite{bell1997independent, olshausen1997sparse}.
+It has thus been proposed that the oriented filters in V1 function to remove higher-order correlations.
+
+Orientation selectivity is a striking feature of the response properties of simple cells in V1.
+Since the discovery of orientation selectivity in Hubel and Wiesel's Nobel Prize-winning work, the mechanism for the computation has remained unclear.
+A common point of confusion in the field has been the assumption that a neuron with a locally oriented receptive field will exhibit orientation selectivity.
+Here, we will argue that narrow orientation selectivity requires a non-linear encoding process in addition to an oriented receptive field.
+For experiments in this section all models were trained patch-wise on natural image patches from the van Hateren image dataset, which were transformed to log intensity, whitened, and normalized to have zero mean and unit variance \parencite{hateren1998independent}.
+
+\subsection{LCA neurons have improved orientation selectivity}
+Bent iso-response contours have important implications regarding the coding capabilities of neurons.
+Work from David Field's lab \parencite{golden2016conjectures, vilankar2017selectivity} suggests that the degree of exo-origin curvature for neurons indicates how selective they are.
+Here, demonstrate this by showing that LCA neurons are more selective to oriented gratings than ICA neurons or neurons with pointwise sigmoid nonlinearities.
+As we illustrate in figure \ref{fig:ch4_lca_selectivity_diagram}, linear or pointwise nonlinear neurons will respond equally to perturbations that are orthogonal to their weight vector.
+However, if the target neuron has exo-origin bent contours, then any orthogonal perturbation from the neuron's weight vector will result in the activation decreasing.
+
+\begin{figure}[hb]
+    \centering
+    \includegraphics[width=0.3\textwidth]{figures/lca_selectivity_diagram.png}
+    \caption{\textbf{Bent contours indicate increased selectivity.} This diagram shows qualitatively what expected responses would be for perturbations that are orthogonal to a neuron's weight vector. Each square represents an example input and the plots on the left indicate the inputs' positions in an image plane defined by the neuron's weight vector and an orthogonal vector. The plots on the right show what a model neuron's output would be for each type of nonlinearity. The bent contours indicate that a neuron's response will go down as one moves in an orthogonal direction from the weight vector in the image plane. This has important implications for neural coding - the neuron with bent contours is going to produce an activation value that is more indicative of the input's proximity to its weight vector.}
+    \label{fig:ch4_lca_selectivity_diagram}
+\end{figure}
+
+We acknowledge that any degree of preference towards one orientation could be considered ``orientation selectivity''.
+In the works of \parencite{golden2016conjectures,vilankar2017selectivity}, they alleviate this confusion by defining \textit{hyperselectivity} as a measure of the falloff in sensitivity as one moves away from a neuron's optimal stimulus, which is consistent with what was explained previously in this section.
+Instead of adhering to their mathematical definition of hyperselectivity, going forward we will refer to it qualitatively as narrow-band sensitivity to a type of stimulus.
+In this work we only measure orientation selectivity and we reserve measuring selectivity to other stimulus variations for future work.
+
+In figure \ref{fig:ch4_orientation_selectivity}, we compare the orientation selectivity of the LCA against ICA (linear encoding) and a sparse autoencoder (SAE, \cite{ng2011sparse}).
+We show that although all of the models can be trained to learn oriented filters, none of them are as selective to oriented grating stimuli as the LCA.
+To produce the grating stimulus, we first computed the optimal spatial frequency for each neuron's weight vector using a Fourier transform.
+Next, we constructed a set of full-field grating stimuli with the target spatial frequency, 16 different orientations, and 8 different phases.
+Finally, we compute the neuron's circular variance to measure the orientation selectivity, which is a more generic measure than the more traditional full-width at half-max \parencite{ringach2002orientation} in that it does not assume a Gaussian profile.
+
+% TODO: redo analysis with better SAE model
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=\textwidth]{figures/circular_variance_histogram.png}
+    \caption{\textbf{The LCA is more selective to oriented gratings than ICA or neurons with a sigmoid nonlinearity.} On the left is a histogram of the circular variance \parencite{ringach2002orientation}, a measure of orientation selectivity, for all of the neurons in each model. In the middle we show example orientation selectivity diagrams for neurons with different nonlinearities. On the right we show the corresponding weights for each of the orientation plots. The LCA and SAE networks had 768 latent units and the ICA network had 256. We also found that the shift in circular variance histograms as we increased overcompleteness (we tested 2x, 3x, and 4x overcompleteness levels) of the LCA was negligible compared to the difference between nonlinearities (data not shown).}
+    \label{fig:ch4_orientation_selectivity}
+\end{figure}
+
+\subsection{Rate-distortion analyses}
+Independent Component Analysis (ICA) is one of the most widely used image coding algorithms and has been proposed as a model for simple cells in V1 \parencite{bell1997independent, hyvarinen1999fast}.
+The ICA algorithm explicitly optimizes for higher-order redundancy reduction, aiming to to reconstruct the input image as a linear superposition of a set of basis functions while minimizing the mutual information between the coefficients of data vectors in that basis.
+Eichhorn et al. \citeyearpar{eichhorn2009natural} compare the coding efficiency of ICA and PCA to obtain the surprising result that ICA performs no better than PCA on a rate-distortion trade-off metric.
+ICA is trained with the objective of minimizing the joint entropy of the activations and learns oriented filters that suggest it has succeeded in modeling higher-order pixel correlations, while PCA is a second-order method that does not learn oriented filters.
+Eichhorn et al. \citeyearpar{eichhorn2009natural} argue that if ICA had succeeded at capturing higher-order statistics, it should show an advantage in the rate-distortion trade-off.
+We present an alternate explanation of these findings by distinguishing \textit{orientation selectivity} from \textit{oriented filters}.
+As we have discussed earlier in this chapter, neurons achieve narrow orientation selectivity via a nonlinear process.
+We argue that although the ICA optimization algorithm is able to learn oriented filters, ICA's linear encoding process limits its capacity to perform orientation selectivity, which in turn limits its capacity to produce an efficient code.
+Here, we replicate the rate-distortion analyses from \parencite{eichhorn2009natural} to show that the LCA's nonlinear encoding process produces lower entropy codes than linear encoders while being more perceptually robust to increasingly coarse quantization.
+
+First we train LCA \parencite{rozell2008sparse}, ICA \parencite{bell1997independent}, and PCA \parencite{jolliffe2016principal} on 1 million 16 x 16 pixel grayscale image patches. Then, using the learned filter matrices, we compute model activations for a test set of 100,000 patches and uniformly quantize these activations with varying degrees of granularity. For each level of granularity, we compute a reconstruction of the test input using the quantized activations and compute the mean squared error. Figure \ref{fig:ch4_rate_distortion} plots the rate (mean marginal discrete entropy of the activations) against the distortion (mean squared error).
+
+
+Results for sparse coding models trained with different values of $\lambda$ are shown, where a larger $\lambda$ indicates higher sparsity. We replicate the findings from \parencite{eichhorn2009natural} that (orthogonal) PCA  performs slightly better than ICA in the rate-distortion trade-off. Sparse coding shows an advantage over both ICA and PCA. Additionally, we find that representations that are more sparse are capable of achieving increasingly lower rates. Figure \ref{fig:ch4_rate_distortion} shows an example reconstruction in the highly lossy (low entropy) regime. For a mean marginal entropy of $H\approx 0.4$, sparse coding shows an advantage in perceptual quality, as well as a quantitative advantage in terms of mean squared error.
+
+% TODO: Get sparsity (lambda) level for image distortions - also, verify that it is off of the RD chart?
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.5\textwidth]{figures/rate_distortion.png}
+    \caption{\textbf{LCA provides better compression than ICA or PCA.} The rate-distortion plot on the left provides results for sparse coding models trained with different values of $\lambda$, where larger $\lambda$ indicates higher sparsity. We replicate the finding from \parencite{eichhorn2009natural} that PCA performs slightly better than ICA in the rate-distortion trade-off, however the LCA shows an advantage over both PCA and ICA. On the right we provide example reconstructions in the highly lossy (low-entropy) regime. For a mean marginal entropy of $H \approx 0.4$ bits per pixel, the LCA shows a qualitative and quantitative advantage. This figure was reproduced from unpublished work with permission from \parencite{sanborn2016sampling}.}
+    \label{fig:ch4_rate_distortion}
+\end{figure}
+
+
+
+\subsection{Discussion}
+Our results suggest the importance of nonlinear encoding for producing efficient codes of natural images and we demonstrate that orientation \textit{selective} neurons are capable of reducing higher-order redundancy. We show that although the ICA algorithm is able to learn oriented filters, ICA's linear encoding process limits its capacity to perform genuine orientation selectivity, which in turn limits its capacity to produce an efficient code. In future work we plan to extend our analysis to hierarchical models of natural scenes that may achieve greater gains in coding efficiency.
+
+
+\section{Iso-response contours predict adversarial attack directions}\label{sec:ch4_adv_defense}
 
 \subsection{Adversarial Examples}
 Adversarial examples are a demonstration of an artificial neural network's (ANN’s) inability to cope with transformations that adjust the distribution of inputs from that of the training data without changing semantic content, \parencite{ford2019adversarial}, which we call distributional shift. They represent a worst-case demonstration of this weakness, which is a general problem that all classification ANNs are susceptible to \parencite{hendrycks2018benchmarking}. We postulate that designing machine learning algorithms that are both accurate and robust to adversarial attacks requires a radical reformulation in how such algorithms are currently constructed. In particular, we propose to allow our models to undergo a period of unsupervised learning that mimics the cognitive development of biological nervous systems instead of a strict reliance on reducing classification loss (i.e. an exclusive focus on classification accuracy). This is motivated by the observation that biological systems are robust to adversarial examples that affect deep networks. However, in time-limited regimes that result in predominantly feed-forward brain computation, adversarial attacks have been shown to influence human decision making \parencite{elsayed2018adversarial}, suggesting that slower recurrent feedback loops aid in adversarial robustness. Congruent with current theories for probabilistic inference in the brain \parencite{lee2003hierarchical}, we augment the standard ANN architecture with lateral connectivity and recurrence. We propose that, together, these innovations will improve the network’s specificity to signals that lie along the data manifold. We use adversarial attacks as a mechanism for understanding both traditional pointwise nonlinear ANNs and a population nonlinear alternative.
 
 Adversarial attacks represent a flaw in typical deep neural networks, where small targeted perturbations in the input space can cause large undesired changes in the output space. Although the discovery of adversarial examples in deep networks is relatively new, it has had a considerable amount of academic attention and an understanding of these attacks has begun to emerge. In the pioneering work of Szegedy et al. \citeyearpar{szegedy2013intriguing}, they introduce the idea of ``adversarial attacks'' for deep networks and propose that a non-smooth decision boundary in classification networks produces adversarial ``pockets'' interspersed among dataset examples. The pockets are explained as isolated regions in the manifold where adversarial examples exist. They also suggest that adversarial images represent a counter-example to the hypothesis that deep networks are able to achieve local generalization to input space regions in the vicinity of training examples. Although this latter hypothesis has continued to hold, the presence of universal and transferable adversarial directions \parencite{moosavi2017universal} suggests that there are not adversarial pockets in the input manifold. The follow up work of Goodfellow et al. \citeyearpar{goodfellow2014explaining} make several proposals, some of which have been refuted (for example by \cite{jetley2018friends}). However, we would like to emphasize two important arguments from their work: 1) they present evidence suggesting that the direction of perturbation is more important than the specific point in space (further refuting the ``pockets'' theory), and 2) the adversarial perturbations are highly aligned with the weight vectors of a model. The last of those observations has been explored in much more detail by Jetley et al. \citeyearpar{jetley2018friends}, who suggest that deep networks produce classification boundaries based on a small number of features that correspond to high curvature directions in the input space and that these high curvature directions are also the most effective adversarial directions. The works of Gilmer et al. \citeyearpar{gilmer2018adversarial} and Ford et al. \citeyearpar{ford2019adversarial} further expand on this idea by suggesting that adversarial attacks confined to the $l_{\infty}$ box represent the worst-case example of the model's inability to account for distributional shift generally. However, the works of Kos et al. \citeyearpar{kos2018adversarial} and Goodfellow et al. \citeyearpar{goodfellow2014explaining} demonstrate the ability to produce adversarial examples for pointwise-nonlinear generative models that have applications in image denoising. We would expect generative models to preserve information from their inputs and therefore be less susceptible to adversarial attacks. Additionally, it has been suggested that denoising in general should help with robustness. This work suggests a more nuanced explanation of adversarial susceptibility. Recent work has also shown that nearly all proposed adversarial defense mechanisms fail in the face of more careful attacks \parencite{carlini2017towards, athalye2018obfuscated}. For example, the recent defense method proposed by \cite{sun2018adversarial} claims to produce an adversarially robust preprocessing step, although they use basis pursuit in their methods, which possibly achieves robustness through gradient obfuscation \parencite{athalye2018obfuscated}. However, their intuition that images should be forced onto the image manifold as a preprocessing step has great relevance to the work herein. The work of \cite{jacobsen2018excessive} makes clear the trade-off between adversarial robustness and test accuracy and suggests that excessive invariance of a network should also be considered when understanding adversarial weakness. Adversarial perturbations push inputs across decision boundaries such that the semantic quality of the image is largely the same but the label is changed to an incorrect classification. It is also possible to arrive at the same result by generating an image such that the network's output is unchanged but the semantic quality is largely different, which they call an invariance-based adversary. Our proposed framework is consistent with this idea and we provide an alternative perspective for excessive invariance. It will always be possible to produce an image perturbation that results in a change in class label, or an alternate reconstruction. The academic interest in the subject comes from observations of how small that perturbation can be and the (lack of) semantic content of the perturbation. Following the intuition provided in \parencite{ford2019adversarial}, successful defenses appear to require accomplishing one of two goals: 1) robustly denoising inputs to prevent distributional shift or 2) training deep networks to be more robust to worst-case distributional shift.
 
-Inferring causes from natural signals is a challenging problem faced by biological vision systems. For artificial vision, the neural network community has largely tackled this problem using feedforward discriminative models. An alternative approach is to use generative models, in which the network must attempt to explain data in terms of an internal model of the world. In biological neural networks (BNNs) we see a preponderance of evidence that individual neurons are highly non-linear, recurrent, and laterally connected. The LCA has been shown previously to exhibit a variety of non-linear receptive field effects \parencite{zhu2013visual}. Many of these effects can be explained using the model neuron’s iso-response contours - an experimental method for determining stimulus combinations that result in equal activation from recorded neurons \parencite{golden2016conjectures}. In the brain, the atomic unit of computation is generally considered to be the neuron, but most deep learning research has eschewed the individual neuron, possibly obfuscating the connections between BNNs and ANNs. We propose to adopt the single-neuron iso-response analysis to better understand adversarial attacks on ANNs with varying degrees of biological realism.
-
-To better understand how adversarial attacks differ for BNNs and ANNs, we compared feed-forward, pointwise nonlinear discriminative and generative network architectures against more biologically-informed population nonlinear generative network architectures. Pointwise nonlinearities are the more traditional form of nonlinearities and are seen in nearly all deep neural network architectures. They are defined as nonlinearities that are a function of only a single neuron in a layer and include rectification, sigmoid, and hyperbolic tangent. Population nonlinearities represent the alternative class, where the nonlinearity output is a function of multiple neurons in a set. These include divisive normalization \parencite{carandini2012normalization, balle2016end} and the network nonlinearity present in sparse coding \parencite{rozell2008sparse, olshausen1997sparse}. In principle, generative models should not be as susceptible to adversarial attacks as discriminative models because they are trying to fit their internal model to the data as a ``sanity check'', which should not succeed for adversarial perturbations. One method by which generative models can perform such a sanity check is via recurrent maximum a-posteriori (MAP) inference. The LCA network uses population nonlinear interactions via lateral connectivity among neurons to facilitate this process, resulting in an ``explaining away'' effect commonly referenced in Bayesian inference literature \parencite{olshausen2013perception}.
 
 \subsection{Neuron response geometry predicts adversarial robustness}\label{sec:ch4_neuron}
-We performed single neuron and population level analysis by extending the iso-response contour theory to be used as a lens to understand untargeted adversarial perturbations for individual neurons \parencite{golden2016conjectures,vilankar2017selectivity}. Additionally, we have scaled up the iso-response analysis to models trained on images of handwritten digits (MNIST, \cite{lecun1998mnist}) and natural scenes (CIFAR, \cite{krizhevsky2009learning}). We show that the response geometry of LCA neurons predicts data-aligned perturbations when attacking the entire network, resulting in semantically meaningful adversarial attacks. We provide a theoretical argument to support this intuition by exploring the iso-response contours and orthogonal adversarial directions for individual neurons and give empirical evidence to further bolster the claims. 
+We propose to adopt the single-neuron iso-response analysis to better understand adversarial attacks on ANNs with varying degrees of biological realism.
+Biological neurons are highly interconnected, both across and within layers.
+This interconnection gives rise to strong population nonlinear effects.
+However, nearly all work in neuron modeling uses pointwise nonlinearities due to the ease in interpretation and implementation.
+In principle, generative models should not be as susceptible to adversarial attacks as discriminative models because they are trying to fit their internal model to the data as a ``sanity check'', which should not succeed for adversarial perturbations. One method by which generative models can perform such a sanity check is via recurrent maximum a-posteriori (MAP) inference. The LCA network uses population nonlinear interactions via lateral connectivity among neurons to facilitate this process, resulting in an ``explaining away'' effect commonly referenced in Bayesian inference literature \parencite{olshausen2013perception}.
+Work from \parencite{golden2016conjectures} suggests a novel single-neuron analysis technique that allows us to increase the complexity of our neuron models without decreasing our understanding by looking at the neuron’s response geometry.
+We performed single neuron and population level analysis by extending the iso-response contour theory to be used as a lens to understand untargeted adversarial perturbations for individual neurons \parencite{golden2016conjectures,vilankar2017selectivity} and predict important properties about these models' susceptibility to adversarial attacks.
+We show that the response geometry of LCA neurons predicts data-aligned adversarial perturbations, resulting in semantically meaningful adversarial attacks.
+We conduct our experiments on networks with both pointwise and population nonlinearities.
+Although there are many types of networks that fit into these two categories, we reserve comparative analysis among them to future work and focus this study on three specific instances: feedforward autoencoders (AEs), feedforward multi-layer perceptrons (MLPs), and the Locally Competitive Algorithm (LCA).
 
-Biological neurons are highly interconnected, both across and within layers. This interconnection gives rise to strong population nonlinear effects. However, nearly all work in neuron modeling uses pointwise nonlinearities due to the ease in interpretation and implementation. Work from \parencite{golden2016conjectures} suggests a novel single-neuron analysis technique that allows us to increase the complexity of our neuron models without decreasing our understanding by looking at the neuron’s response geometry. We extend this technique to larger scale models, allowing us to predict important properties about these models' susceptibility to adversarial attacks. We then analyze the attacks themselves to demonstrate how the single-neuron analysis extends to networks. We conduct our experiments on two types of networks: those with pointwise nonlinearities and those with population nonlinearities (figure \ref{fig:ch4_iso_contours}). Although there are many types of networks that fit into these two categories, we reserve comparative analysis among them to future work and focus this study on three specific instances: feedforward autoencoders (AEs), feedforward multi-layer perceptrons (MLPs), and the Locally Competitive Algorithm (LCA). We focus on the LCA as the population nonlinear network because it has been shown to exhibit many linear and nonlinear response properties that are well matched to what is observed in the brain \parencite{zhu2013visual, olshausen1997sparse}.
 
 % TODO: Distribution shift experiment
-\subsubsection{Adversarial examples are orthogonal to iso-response contours}
 % TODO: Does the fig:ch4_iso_contours caption actually have more details?
 % TODO: Add a sentence after golden et al sentence on vilankar paper
+%\subsubsection{Adversarial examples are orthogonal to iso-response contours}
 To better understand the difference between population and pointwise nonlinearities, we visualize the input-output maps of model neurons in the form of iso-response contours (figure \ref{fig:ch4_iso_contours}, see caption for more details). Golden et al. \citeyearpar{golden2016conjectures} used iso-response contours to explain several non-linear properties as well as variance/invariance properties for simple and complex cells. To construct the visualization, we consider a two-dimensional slice, or projection, of the high dimensional input space. We use each point (i.e. image) in the slice as input to the neuron model and bin the points according to the neuron's output amplitude. The iso-response contours of linear neurons are straight: any input perturbation that is orthogonal to the weight vector will result in equal activation. For pointwise nonlinearities, this remains true: because the nonlinearity is performed after a linear projection, the output must also produce straight iso-response contours. By contrast, for a population nonlinearity the gradient of the activation function with respect to a small perturbation in the input is a function of all other neurons in the layer. Consider: for a perturbation that is orthogonal to a target neuron's weight vector, it is generically the case that some other neuron will have a non-orthogonal weight vector, which can result in a net change in all neuron outputs. Therefore, iso-response contours for population nonlinear neurons can be bent.
 
 Adversarial examples are closely tied to neuron iso-response contours. While an iso-response contour represents a perturbation direction in stimulus space that produces no change in the output, an adversarial example is a perturbation direction that produces a maximal change in the output. Below, we present analytic arguments that these two response directions are orthogonal for individual neurons.
@@ -68,8 +222,7 @@ where $\langle , \rangle$ indicates a dot product and $o(\varepsilon)$ is a tigh
 
 where $\nabla_{s}f(s)$ is the output gradient of the target neuron. For small $\|e\|$, the linear terms in equation \eqref{eq:ch4_angle_metric} dominate and these equations are solved when $e \parallel \nabla_{S}f(s)$ for the adversarial perturbation and $e \perp \nabla_{s}f(s)$ for the iso-response perturbation. This tells us that the optimal adversarial directions will always be perpendicular to the iso-response directions for an untargeted adversarial attack. 
 
-\subsubsection{Iso-response contours}
-% TODO: Should this paragraph go later?
+%\subsubsection{Estimating adversarial directions}
 Although we know that the adversarial directions are perpendicular to iso-response contours, we cannot analytically derive the directions for population nonlinearities. Instead, we can estimate adversarial perturbation directions by measuring the iso-response contours empirically. Figure \ref{fig:ch4_adv_grads} shows schematic drawings of the contours measured for population- and pointwise-nonlinear neurons along with the expected adversarial directions.
 
 The response function of a model neuron for a perturbation, $e$, added to an input signal, $s$, can give us insight to that neuron's iso- and adversarial-response properties. First, we will describe this for a linear neuron, $f_{k}(s) \coloneqq \phi_{k}^\top s$:
@@ -132,26 +285,6 @@ Finally, we extend this analysis to population nonlinear networks. For populatio
 \end{align}
 
 where $p_{k}^\top$ is a one-hot vector selecting output $k$, $g(\cdot)$ is a function of the weight matrix times the input, and $\nabla_{s}g(\Phi s)$ is its Jacobian. We can no longer simply describe the contours of these neurons because the gradient of the non-linearity is now a function of (an arbitrary linear transformation of) $s$. For individual neurons, the contours can be straight or bent, and if bent they can bend towards the origin (endo-origin) or away from it (exo-origin).
-
-\begin{figure}
-    %\vskip -0.05in
-    \begin{center}
-    \centerline{\includegraphics[width=0.5\textwidth]{figures/iso_contour_comparison.png}}
-    \end{center}
-    %\vskip -0.3in
-    \caption{\textbf{Empirically measured iso-response contours.} A fine sampling of points in a 2D plane are injected into the high dimensional image space and used as inputs to a target model neuron, $a_{k}$. The color value indicates a binned normalized response magnitude of the $k^{\text{th}}$ neuron. The red arrow is the weight vector for the neuron, $\Phi_{k}$. The white arrow is an alternate neuron's weight vector.}
-    \label{fig:ch4_iso_contours}
-\end{figure}
-
-It is important to determine an individual neuron’s response contours for a large number of planes to gain insight into its high-dimensional response geometry. We used two different methods for choosing image planes. For both methods, we defined the x-axis as the weight vector for the target neuron. For the first method, we found a set of random vectors that are orthogonal to our neuron’s weight vector and compute curvature in each plane. For the second method we start by finding another neuron’s weight vector that has a nonzero inner-product with our target neuron’s weight vector (and thus they are not orthogonal).  This method increases the likelihood of competition between neurons, and thus increases the curvature. Then, to get an orthonormal basis, we used the Gram-Schmidt process to find a vector orthogonal to our target neuron, but coplanar with our second neuron. This result allows us to better understand the neuron’s high-dimensional iso-response geometry. Figure \ref{fig:ch4_iso_contour_lca_hists} demonstrates that LCA neurons have negative curvature in nearly all planes tested. Thus, most orthogonal perturbations from a neuron's weight vector will result in a decrease in its activation. This is an important quality that we desire from our model neurons. In visual neuroscience, we often use the neurons linear receptive field (in our model that is represented by its weight vector) to represent the stimulus that the neuron is selective for. With a pointwise nonlinear neuron model, it is possible to deviate away from its weight vector in many different directions without changing the neuron's response. LCA neurons, on the other hand, have a higher degree of selectivity to perturbations away from their receptive field.
-
-\begin{figure}
-    \begin{center}
-    \centerline{\includegraphics[width=\textwidth]{figures/iso_contour_lca_hists.png}}
-    \end{center}
-    \caption{\textbf{LCA neurons have high-dimensional exo-origin curvature.} The histogram shows second order coefficients for polynomial fits to the lines in the middle plot. Negative coefficients indicate exo-origin curvature, which tells us that LCA neurons exhibit exo-origin curvature in almost all orthogonal directions tested. The target neuron was randomly selected from a 2x overcomplete LCA model trained on the MNIST dataset with z-score (zero mean, unit standard deviation) preprocessing. We replicated these results for many random neurons. See text for details about random versus targeted directions.}
-    \label{fig:ch4_iso_contour_lca_hists}
-\end{figure}
 
 
 \section{The LCA provides defense against adversarial attacks}
@@ -313,65 +446,6 @@ The lateral connectivity in the LCA network is implemented via a recurrent compu
 %\subsubsection{Attacks with the CIFAR dataset}
 %The LCA objective is derived from a model of natural images, so we believe the network will exhibit stronger aversion to adversarial perturbations.
 
-
-\section{Orientation selectivity and efficient coding}\label{sec:ch4_selectivity_efficiency}
-%TODO: Make the point more clear that bent contours facilitate more selective & more efficient codes. Maybe include schematic slides from oxyopia talk?
-A longstanding hypothesis in sensory neuroscience proposes that a primary function of early sensory processing is to form an efficient, redundancy-reduced code of the input that maximizes the brain's limited computational and biological resources while making explicit the statistical structure of the input \parencite{barlow2001redundancy}. This hypothesis predicts that the response properties of sensory neurons should be adapted to the statistical structure of their input. In support of this hypothesis, a number of the response properties of visual neurons have been reproduced by optimizing redundancy-reducing linear transformations on natural images \parencite{atick1990towards}. For example, a symmetric decorrelation transformation of natural images yields center-surround receptive fields \parencite{atick1990towards}, and Principal Component Analysis (PCA) applied to color images yields the luminance, red-green, and blue-yellow channel observed in the opponent color coding of retinal ganglion cells \parencite{ruderman1998statistics, buchsbaum1983trichromacy}. When higher-order correlations are additionally reduced, localized, oriented, and band-pass filters that resemble the orientation-selective receptive fields in V1 simple cells emerge \parencite{bell1997independent, olshausen1999probabilistic}. It has thus been proposed that the oriented filters in V1 function to remove higher-order correlations.
-
-Orientation selectivity is a striking feature of the response properties of simple cells in V1. Since the discovery of orientation selectivity in Hubel and Wiesel's Nobel Prize-winning work, the mechanism for the computation has remained unclear. A common point of confusion in the field has been the assumption that a neuron with a locally oriented receptive field will exhibit orientation selectivity. Here, we will argue that orientation selectivity requires a non-linear encoding process in addition to an oriented receptive field.
-
-Independent Component Analysis (ICA) is one of the most widely used image coding algorithms and has been proposed as a model for simple cells in V1 \parencite{bell1997independent}. The ICA algorithm explicitly optimizes for higher-order redundancy reduction, aiming to to reconstruct the input image as a linear superposition of a set of basis functions while minimizing the mutual information between the coefficients of data vectors in that basis. Eichhorn et al. \citeyearpar{eichhorn2009natural} compare the coding efficiency of ICA and PCA to obtain the surprising result that ICA performs no better than PCA on a rate-distortion trade-off metric. ICA is trained with the objective of minimizing the joint entropy of the activations and learns oriented filters that suggest it has succeeded in modeling higher-order pixel correlations, while PCA is a second-order method that does not learn oriented filters. Eichhorn et al. \citeyearpar{eichhorn2009natural} argue that if ICA had succeeded at capturing higher-order statistics, it should show an advantage in the rate-distortion trade-off.
-
-We present an alternate explanation of these findings by distinguishing \textit{orientation selectivity} from \textit{oriented filters}. Neurons achieve orientation selectivity via a fundamentally nonlinear process, as exhibited by nonclassical receptive field (nCRF) effects such as cross-orientation suppression \parencite{golden2016conjectures, zhu2013visual}. We argue that although the ICA optimization algorithm is able to learn oriented filters, ICA's linear encoding process limits its capacity to perform genuine orientation selectivity, which in turn limits its capacity to produce an efficient code. Zhu and Rozell \citeyearpar{zhu2013visual} demonstrate that sparse coding using the LCA is able to provide a parsimonious explanation of both classical and nonclassical receptive field properties using a neural network implementing sparse coding. Here, we replicate the rate-distortion analyses from \parencite{eichhorn2009natural} using the LCA to show that a nonlinear encoding process produces more efficient codes to linear encoders. To assess the degree of orientation selectivity for ICA neurons, we replicate the cross-orientation suppression experiment performed by \parencite{zhu2013visual} with both sparse coding and ICA networks. In the following experiments all models were trained patch-wise on Fourier whitened natural image patches from the van Hateren image dataset \parencite{hateren1998independent}.
-
-
-\subsection{Rate-distortion analyses}
-The standard for evaluating the efficiency of lossy continuous codes is the rate-distortion framework \parencite{cover2012elements}. Eichhorn et al. \citeyearpar{eichhorn2009natural} compare the  coding efficiency of ICA and PCA and find that PCA performs \textit{better} than ICA in terms of the rate-distortion trade-off. Here, we replicate the rate-distortion analyses from \parencite{eichhorn2009natural} and show that the LCA's non-linear encoding process enables codes that have lower entropy than those learned by ICA or PCA while being more perceptually robust to increasingly coarse quantization.
-
-% TODO: Get sparsity (lambda) level for image distortions - also, verify that it is off of the RD chart?
-\begin{figure}[ht]
-    \centering
-    \includegraphics[width=\textwidth]{figures/rate_distortion.png}
-    \caption{\textbf{LCA provides better compression than ICA or PCA.} The rate-distortion plot on the left provides results for sparse coding models trained with different values of $\lambda$, where larger $\lambda$ indicates higher sparsity. We replicate the finding from \parencite{eichhorn2009natural} that PCA performs slightly better than ICA in the rate-distortion trade-off, however the LCA shows an advantage over both PCA and ICA. On the right we provide example reconstructions in the highly lossy (low-entropy) regime. For a mean marginal entropy of $H \approx 0.4$ bits per pixel, the LCA shows a qualitative and quantitative advantage. This figure was reproduced from unpublished work with permission from \parencite{sanborn2016sampling}.}
-    \label{fig:ch4_rate_distortion}
-\end{figure}
-
-We train LCA \parencite{rozell2008sparse}, ICA \parencite{bell1997independent}, and PCA on 1 million 16 x 16 pixel grayscale image patches extracted from images in the van Hateren dataset of natural scenes, which have been transformed to log intensity and standardized to zero mean and unit variance \parencite{hateren1998independent}. Using the learned filter matrices, we compute model activations for a test set of 100,000 patches and uniformly quantize these activations with varying degrees of granularity. For each level of granularity, we compute a reconstruction of the test input using the quantized activations and compute the mean squared error. Figure \ref{fig:ch4_rate_distortion} plots the rate (mean marginal discrete entropy of the activations) against the distortion (mean squared error).
-
-Results for sparse coding models trained with different values of $\lambda$ are shown, where a larger $\lambda$ indicates higher sparsity. We replicate the findings from \parencite{eichhorn2009natural} that (orthogonal) PCA  performs slightly better than ICA in the rate-distortion trade-off. Sparse coding shows an advantage over both ICA and PCA. Additionally, we find that representations that are more sparse are capable of achieving increasingly lower rates. Figure \ref{fig:ch4_rate_distortion} shows an example reconstruction in the highly lossy (low entropy) regime. For a mean marginal entropy of $H\approx 0.4$, sparse coding shows an advantage in perceptual quality, as well as a quantitative advantage in terms of mean squared error.
-
-
-\subsection{LCA neurons have improved orientation selectivity}
-%https://docs.google.com/presentation/d/1Vzk_fVGO-ERQDjKWRvzuHpV6YGwUriD6NyJNpf-WbVE/edit#slide=id.g50750b3c61_0_158
-%TODO:
-% read & cite vilankar2017selectivity
-% Move over figures from oxyopia talk
-% bent contours give neurons selectivity
-% Add discussion about the type of nonlinearity (i.e. not just nonlinear, but population nonlinear) being important as well
-Bent iso-response contours have important implications regarding the coding capabilities of neurons. Golden et al. \citeyearpar{golden2016conjectures} suggest that the degree of exo-origin curvature for neurons indicates how selective they are. In the previous sections, we supported this conjecture by showing that LCA neurons are more protected against adversarial attacks than neurons with pointwise nonlinearities. We also showed that the LCA produces a more efficient code than do ICA or PCA.
-Here, we connect the selectivity and efficiency of the LCA by showing that LCA neurons are more selective to oriented gratings than ICA neurons or neurons with pointwise sigmoid nonlinearities. Figure \ref{fig:ch4_lca_selectivity_diagram} gives a schematic description of why an LCA neuron is more selective than a pointwise nonlinear or linear neuron. If the target neuron has exo-origin bent contours, then any orthogonal perturbation from the neuron's weight vector will result in the activation decreasing.
-
-\begin{figure}[h]
-    \centering
-    \includegraphics[width=0.5\textwidth]{figures/lca_selectivity_diagram.png}
-    \caption{\textbf{Bent contours indicate increased selectivity.} This diagram shows qualitatively what expected responses would be for perturbations that are orthogonal to a neuron's weight vector. Each square represents an example input and the plots on the left indicate the inputs' positions in an image plane defined by the neuron's weight vector and an orthogonal vector. The plots on the right show what a model neuron's output would be for each type of nonlinearity. The bent contours indicate that a neuron's response will go down as one moves in an orthogonal direction from the weight vector in the image plane. This has important implications for neural coding - the neuron with bent contours is going to produce an activation value that is more indicative of the input's proximity to its weight vector.}
-    \label{fig:ch4_lca_selectivity_diagram}
-\end{figure}
-
-In figure \ref{fig:ch4_orientation_selectivity}, we compare the orientation selectivity of the LCA against ICA (linear encoding), a sparse autoencoder (SAE, \cite{ng2011sparse}), and a ReLU autoencoder \parencite{nair2010rectified}. We show that although all of the models can be trained to learn oriented filters with some amount of regularization, none of them are as selective to oriented grating stimuli as the LCA. To produce the grating stimulus, we first computed the optimal spatial frequency for each neuron's weight vector using a Fourier transform. Next, we constructed a set of full-field grating stimuli with the target spatial frequency, 16 different orientations, and 8 different phases. The left plots in figure \ref{fig:ch4_orientation_selectivity} show the mean response across phase for each orientation. The middle plots show the corresponding basis functions. The right plots show a histogram of circular variance, a robust measure that provides a bounded orientation selectivity index ranging from 0 to 1 \parencite{ringach2002orientation}.
-
-% TODO: Add corresponding basis functions
-% TODO: redo analysis with better SAE model
-\begin{figure}[h]
-    \centering
-    \includegraphics[width=\textwidth]{figures/circular_variance_histogram.png}
-    \caption{\textbf{The LCA is more selective to oriented gratings than ICA or neurons with a sigmoid nonlinearity.} On the left is a histogram of the circular variance \parencite{ringach2002orientation}, a measure of orientation selectivity, for all of the neurons in each model. In the middle we show example orientation selectivity diagrams for neurons with different nonlinearities. On the right we show the corresponding weights for each of the orientation plots. The LCA and SAE networks had 768 latent units and the ICA network had 256. We also found that the shift in circular variance histograms as we increased overcompleteness (we tested 2x, 3x, and 4x overcompleteness levels) of the LCA was negligible compared to the difference between nonlinearities (data not shown).}
-    \label{fig:ch4_orientation_selectivity}
-\end{figure}
-
-
-\subsection{Discussion}
-Our results suggest the importance of nonlinear encoding for producing efficient codes of natural images and we demonstrate that orientation \textit{selective} neurons are capable of reducing higher-order redundancy. We show that although the ICA algorithm is able to learn oriented filters, ICA's linear encoding process limits its capacity to perform genuine orientation selectivity, which in turn limits its capacity to produce an efficient code. In future work we plan to extend our analysis to hierarchical models of natural scenes that may achieve greater gains in coding efficiency.
 
 
 %TODO:
