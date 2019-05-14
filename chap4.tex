@@ -1,12 +1,12 @@
 \chapter{Selectivity, Efficiency, and Robustness of the LCA}
 
 \section{Introduction}
-Work from David Field's lab \parencite{golden2016conjectures,vilankar2017selectivity} proposes a single-neuron analysis technique that allows us to increase the complexity of our neuron models without decreasing our understanding by characterizing at the neuron’s response geometry in the form of iso-response contours.
+Work from David Field's lab \parencite{golden2016conjectures,vilankar2017selectivity} proposes a single-neuron analysis technique that allows us to increase the complexity of our neuron models without significantly decreasing our understanding by characterizing the neuron’s response geometry in the form of iso-response contours.
 They show that contours can be straight or bent, and if bent they can bend towards the origin (endo-origin) or away from it (exo-origin).
 We build on this work and show that the LCA exhibits curved iso-response contours when trained on natural images as well as the MNIST dataset.
-This curvature is a result of population nonlinear computations provided by the LCA's lateral inhibitory connectivity and indicates improved selectivity against stimulus perturbations that are orthogonal the neuron's feed-forward weights.
+This curvature is a result of population nonlinear computations provided by the LCA's lateral inhibitory connectivity and indicates improved selectivity against perturbations that are orthogonal to the neuron's preferred stimulus.
 First we directly measure the network's selectivity to full-field oriented grating stimulus and show improved performance over linear and pointwise-nonlinear networks.
-Next we provide evidence supporting the hypothesis that improved selectivity results in a more efficient code of natural images by demonstrating superior performance by the LCA when compared to the ICA or PCA transforms using the rate-distortion framework.
+Next we provide evidence supporting the hypothesis that improved selectivity results in a more efficient code of natural images.
 Finally, we propose that this selectivity forces adversarial perturbation vectors to have angles that are more in line with data dimensions, producing more semantically meaningful perturbations.
 We develop an analytic argument to support this claim for untargeted single-neuron adversarial attacks.
 Furthermore, we demonstrate by experiment that our method successfully improves robustness to adversarial attacks for a classifier trained on our model's outputs.
@@ -14,13 +14,13 @@ We contribute a novel perspective for understanding adversarial attacks and popu
 
 \section{Measuring iso-response contours}\label{sec:ch4_iso_contours}
 Inferring causes from natural signals is a challenging problem faced by biological vision systems.
-For artificial vision, the neural network community has largely tackled this problem using feedforward discriminative models.
-An alternative approach is to use generative models, in which the network must attempt to explain data in terms of an internal model of the world.
-In biological neural networks (BNNs) we see a preponderance of evidence that individual neurons are highly non-linear, recurrent, and laterally connected.
+%For artificial vision, the neural network community has largely tackled this problem using feedforward discriminative models.
+%An alternative approach is to use generative models, in which the network must attempt to explain data in terms of an internal model of the world.
+In biological neural networks we see a preponderance of evidence that individual neurons are highly non-linear, recurrent, and laterally connected.
 The LCA is a generative model with lateral connectivity and recurrent inference that exhibits a variety of linear \parencite{olshausen1996emergence} and non-linear \parencite{zhu2013visual} receptive field effects that are well matched to biological neurons.
 Many of these effects can be explained using the model neuron’s iso-response contours - an experimental method for determining stimulus combinations that result in equal activation from recorded neurons \parencite{golden2016conjectures}.
-In the brain, the atomic unit of computation is generally considered to be the neuron, but most deep learning research has eschewed the individual neuron, possibly obfuscating the connections between BNNs and ANNs.
-We compare the iso-response contours of feed-forward, pointwise nonlinear discriminative and generative network architectures against more biologically-consistent population nonlinear generative network architectures.
+In the brain, the atomic unit of computation is generally considered to be the neuron, but most deep learning research has eschewed the individual neuron, possibly obfuscating the connections between biological and artificial neural networks.
+We compare the iso-response contours of feed-forward, pointwise nonlinear discriminative and generative network architectures against a more biologically-consistent population nonlinear generative network architecture.
 Pointwise nonlinearities are the more traditional form of nonlinearities and are seen in many deep neural network architectures and computational neuroscience models.
 They are defined as nonlinearities that are a function of only a single neuron in a layer and include rectification, sigmoid, and hyperbolic tangent.
 Population nonlinearities represent the alternative class, where the nonlinearity output is a function of multiple neurons in a set.
@@ -77,6 +77,14 @@ We also show that the LCA is more efficient than linear encoding models with ori
 \end{figure}
 
 
+%TODO:
+%\subsection{Hierarchical models exhibit endo-origin curvature}
+% https://docs.google.com/presentation/d/1Vzk_fVGO-ERQDjKWRvzuHpV6YGwUriD6NyJNpf-WbVE/edit#slide=id.g4264a47c80_0_60
+% would want to recompute curvatures for all neurons
+% slide 80 covers lca+pca model, can show that curvature.
+% then slide 73 gives subspace_lca curvature.
+
+
 %TODO: include more schematic slides from oxyopia talk?
 %https://docs.google.com/presentation/d/1Vzk_fVGO-ERQDjKWRvzuHpV6YGwUriD6NyJNpf-WbVE/edit#slide=id.g50750b3c61_0_158
 %TODO:
@@ -89,7 +97,7 @@ We also show that the LCA is more efficient than linear encoding models with ori
 \section{Orientation selectivity and efficient coding}\label{sec:ch4_selectivity_efficiency}
 A longstanding hypothesis in sensory neuroscience proposes that a primary function of early sensory processing is to form an efficient, redundancy-reduced code of the input that maximizes the brain's limited computational and biological resources while making explicit the statistical structure of the input \parencite{barlow2001redundancy}.
 This hypothesis predicts that the response properties of sensory neurons should be adapted to the statistical structure of their input.
-In support of this hypothesis, a number of the response properties of visual neurons have been reproduced by optimizing redundancy-reducing linear transformations on natural images \parencite{atick1990towards}.
+In support of this hypothesis, a number of the response properties of visual neurons have been reproduced by optimizing redundancy-reducing linear transformations on natural images.
 For example, a symmetric decorrelation transformation of natural images yields center-surround receptive fields \parencite{atick1990towards}, and Principal Component Analysis (PCA) applied to color images yields the luminance, red-green, and blue-yellow channel observed in the opponent color coding of retinal ganglion cells \parencite{ruderman1998statistics, buchsbaum1983trichromacy}.
 When higher-order correlations are additionally reduced, localized, oriented, and band-pass filters that resemble the orientation-selective receptive fields in V1 simple cells emerge \parencite{bell1997independent, olshausen1997sparse}.
 It has thus been proposed that the oriented filters in V1 function to remove higher-order correlations.
@@ -115,7 +123,7 @@ However, if the target neuron has exo-origin bent contours, then any orthogonal 
 \end{figure}
 
 We acknowledge that any degree of preference towards one orientation could be considered ``orientation selectivity''.
-In the works of \parencite{golden2016conjectures,vilankar2017selectivity}, they alleviate this confusion by defining \textit{hyperselectivity} as a measure of the falloff in sensitivity as one moves away from a neuron's optimal stimulus, which is consistent with what was explained previously.
+In the works of \parencite{golden2016conjectures,vilankar2017selectivity}, they alleviate this confusion by defining \textit{hyperselectivity} as a measure of the falloff in sensitivity as one moves away from a neuron's optimal stimulus, which is consistent with what we explained previously.
 Instead of adhering to their mathematical definition of hyperselectivity, going forward we will refer to it qualitatively as narrow-band sensitivity to a type of stimulus.
 Here we will only measure selectivity to changing orientation; we reserve measuring selectivity to other stimulus variations for future work.
 
@@ -132,7 +140,7 @@ In figure \ref{fig:ch4_orientation_selectivity}, we compare the orientation sele
 We show that although all of the models can be trained to learn oriented filters, none of them are as selective to oriented grating stimuli as the LCA.
 To produce the grating stimulus, we first computed the optimal spatial frequency for each neuron's weight vector using a Fourier transform.
 Next, we constructed a set of full-field grating stimuli with the target spatial frequency, 16 different orientations, and 8 different phases.
-Finally, we compute the neuron's circular variance to measure the orientation selectivity, which is a more generic measure than the more traditional full-width at half-max \parencite{ringach2002orientation} in that it does not assume a Gaussian profile.
+Finally, we compute the neuron's circular variance to measure the orientation selectivity, which is a more generic measure than the more traditional full-width at half-max in that it does not assume a Gaussian profile \parencite{ringach2002orientation}.
 
 \subsection{Rate-distortion analyses}
 Independent Component Analysis (ICA) is one of the most widely used image coding algorithms and has been proposed as a model for simple cells in V1 \parencite{bell1997independent, hyvarinen1999fast}.
@@ -164,12 +172,13 @@ We also show that although the ICA algorithm is able to learn oriented filters, 
 
 % TODO: Distribution shift experiment
 \section{Iso-response contours predict adversarial attack directions}\label{sec:ch4_adv_defense}
-
 Biological neurons are highly interconnected, both across and within layers, which gives rise to strong population nonlinear effects.
 However, a large majority of research in neuron modeling uses pointwise nonlinearities due to the ease in interpretation and implementation.
-Additionally, much of the research in adversarial analysis has focused on discriminative models.
+Additionally, much of the research in adversarial analysis has focused on discriminative models \parencite{ng2002discriminative}.
 Generative models, on the other hand, should not be as susceptible to adversarial attacks as discriminative models.
 This is because they are trying to fit their internal model to the data as a ``sanity check'', which ideally should not succeed for adversarial perturbations.
+Indeed, we identify classification of natural scenes as a perceptual problem, and we have argued in previous chapters that perception is a problem of inference.
+In the absence of inference, the classification problem is insoluble, and adversarial examples are one aspect of that.
 One method by which generative models can perform such a sanity check is via recurrent maximum a-posteriori (MAP) inference.
 The LCA network uses population nonlinear interactions via lateral connectivity among neurons to facilitate this process, resulting in an ``explaining away'' effect commonly referenced in Bayesian inference literature \parencite{olshausen2013perception}.
 This inference process also produces neurons that have exo-origin curved iso-response contours.
@@ -178,7 +187,7 @@ Here we bring these concepts together by comparing adversarial attacks against g
 
 
 \subsection{Adversarial Examples}
-Adversarial examples are a demonstration of an artificial neural network's (ANN’s) inability to cope with distributional shift, which is any transformation that adjust the distribution of inputs from that of the training data without changing semantic content, \parencite{ford2019adversarial}.
+Adversarial examples are a demonstration of an artificial neural network's (ANN’s) inability to cope with distributional shift, which is any transformation that adjusts the distribution of inputs from that of the training data without changing semantic content, \parencite{ford2019adversarial}.
 They represent a worst-case demonstration of this weakness, which is a general problem that all classification ANNs are susceptible to \parencite{hendrycks2018benchmarking}.
 We postulate that designing machine learning algorithms that are both accurate and robust to adversarial attacks requires a radical reformulation in how such algorithms are currently constructed.
 In particular, we propose to allow our models to undergo a period of unsupervised learning that mimics the cognitive development of biological nervous systems instead of a strict reliance on reducing classification loss.
@@ -188,9 +197,10 @@ Congruent with current theories for probabilistic inference in the brain \parenc
 We propose that, together, these modifications will improve the network’s specificity to signals that lie along the data manifold.
 We use adversarial attacks as a mechanism for understanding both traditional pointwise nonlinear ANNs and a population nonlinear alternative.
 
-Adversarial attacks represent a flaw in typical deep neural networks, where small targeted perturbations in the input space can cause large undesired changes in the output space.
+%TODO: Break up this paragraph
+Adversarial attacks represent a flaw in typical deep neural networks where small targeted perturbations in the input space can cause large undesired changes in the output space.
 Although the discovery of adversarial examples in deep networks is relatively new, it has had a considerable amount of academic attention and an understanding of these attacks has begun to emerge.
-In the pioneering work of Szegedy et al. \citeyearpar{szegedy2013intriguing}, they introduce the idea of ``adversarial attacks'' for deep networks and propose that a non-smooth decision boundary in classification networks produces adversarial ``pockets'', or isolated regions, interspersed among dataset examples.
+In the pioneering work of Szegedy et al. \citeyearpar{szegedy2013intriguing}, they introduce the idea of ``adversarial attacks'' for deep networks and propose that a non-smooth decision boundary in classification networks produces adversarial ``pockets'', or isolated regions on the data manifold, interspersed among dataset examples.
 They also suggest that adversarial images represent a counter-example to the hypothesis that deep networks are able to achieve local generalization to input space regions in the vicinity of training examples.
 Although this latter hypothesis has continued to hold, the presence of universal and transferable adversarial directions \parencite{moosavi2017universal} suggests that there are not adversarial pockets in the input manifold.
 The follow up work of Goodfellow et al. \citeyearpar{goodfellow2014explaining} make several proposals, some of which have been refuted (for example by \cite{jetley2018friends}).
@@ -263,7 +273,7 @@ We can use the Fr\'{e}chet definition of the derivative to better understand how
 \end{align}
 
 where $\langle , \rangle$ indicates a dot product and $o(\varepsilon)$ is a tight bound that means ``terms that are, in the limit $\varepsilon \rightarrow 0$, dominated by $\varepsilon$''.
-This is of similar character to a second order Taylor series expansion. We can now combine these ideas to rewrite the adversarial and iso-response attack objectives:
+This is of similar character to a Taylor series expansion. We can now combine these ideas to rewrite the adversarial and iso-response attack objectives:
 
 \begin{align}\label{eq:ch4_angle_metric}
 \begin{split}
@@ -340,7 +350,7 @@ Thus, we define the activation function, $f_{k}$ as:
 \end{split}
 \end{align}
 
-where $p_{k}^\top$ is a one-hot vector selecting output $k$, $g(\cdot)$ is a function of the weight matrix times the input, and $\nabla_{s}g(\Phi s)$ is its Jacobian.
+where $g(\cdot)$ is a function of the weight matrix times the input, and $\nabla_{s}g(\Phi s)$ is its Jacobian.
 We can no longer simply describe the contours of these neurons because the gradient of the non-linearity is now a function of (an arbitrary linear transformation of) $s$.
 Thus, for individual neurons, the contours can be straight or bent.
 
@@ -374,8 +384,8 @@ From figure \ref{fig:ch4_adv_grads} one can deduce that the only $e^{+}$ directi
 What's more, \emph{all} directions that increase that neuron's output are towards, or along, $\Phi_{k}$.
 From this analysis we hypothesize that adversarial attacks on networks with exo-origin bent contours will be more aligned with the their weight vectors than attacks on networks with straight contours.
 If the weight vectors are data aligned then this will result in adversarial attacks that are data aligned.
-Recall from section \ref{sec:ch4_iso_contours} that the LCA also exo-origin curvature in nearly all orthogonal directions.
-Therefore, the high-dimensional iso-response geometry is that of an irregular cone that indicates protection from orthogonal perturbations.
+Recall from section \ref{sec:ch4_iso_contours} that the LCA has exo-origin curvature in nearly all orthogonal directions.
+Therefore, the high-dimensional iso-response geometry is that of an irregular hyper-cone, which indicates protection from orthogonal perturbations.
 In figure \ref{fig:ch4_marzi_network_attack}, we show that the LCA network has qualitatively more data-aligned perturbations for an untargeted attack when compared to rectified and sigmoid autoencoders with a single hidden layer.
 The rectified network performed worse, likely because of the unbounded nature of the activation function.
 However, even the bounded sigmoid network produced noisy adversarial images with pixels that are irrelevant to the stimulus space becoming active.
@@ -401,7 +411,6 @@ Deep networks can approximate complex functions if they have enough training dat
     \label{fig:ch4_drae_curvature}
 \end{figure}
 
-
 In figure \ref{fig:ch4_marzi_unit_relu_lca}, we show that if we perform the attack defined in equation \eqref{eq:ch4_adv_metric} on a single neuron, such that we minimally change the input while maximally activating a single neuron, then the output for the deep ReLU autoencoder becomes similar to that neuron's optimal stimulus. However, the LCA network simply enhances the feature associated with the target neuron without destroying other structure in the image.
 
 \begin{figure}[h]
@@ -416,7 +425,7 @@ In figure \ref{fig:ch4_marzi_unit_relu_lca}, we show that if we perform the atta
 For the targeted MNIST experiments, we followed the procedures outlined in \parencite{kos2018adversarial, kurakin2016adversarial, carlini2017towards} to construct various adversarial attacks. We consider the LCA as an autoencoder model, $\hat{s}=g(f(s))$, which encodes images into a latent space, $a=f(s)$, and then produces reconstructions from this encoding, $\hat{s}=g(a)$. We compare the LCA against the following models:
 
 % TODO: Check parameters / weight decay / etc for MLP
-
+% TODO: This list should probably go earlier in the section
 \begin{itemize}
   \item A sparse autoencoder (SAE, \cite{ng2011sparse}) with a single overcomplete (768 units) hidden layer that uses a pointwise sigmoid nonlinearity.
   %\item A pointwise rectified (ReLU) \parencite{hahnloser2000digital, nair2010rectified} autoencoder with a single overcomplete (768 units) hidden layer.
@@ -463,12 +472,12 @@ In addition to being data-aligned, we found that the sigmoid nonlinearity in par
 %The standard attack method for classification networks is to perturb input pixels to result in misclassification. One proposed defense against this type of attack is to preprocess the image pixels with a denoising autoencoder that would produce reconstructions void of the adversarial pixel perturbations. However, it has been shown that if one backpropagates the adversarial loss through the autoencoder network, then it is still possible to adversarially attack the network. Here we show that the LCA model outperforms the VAE and SAE networks as a preprocessing ``firewall'' against the adversarial attacks.
 
 \subsubsection{Replacing the first layer of an MLP with an LCA layer boosts robustness}
-In chapter \ref{ch:hierarchical_sc} we discussed potential benefits of using LCA as an unsupervised training method for semi-supervised classification tasks.
+In chapter \ref{ch:iso} we discussed potential benefits of using LCA as an unsupervised training method for semi-supervised classification tasks.
 Here, we show that the same network setup as we described in section \ref{sec:ch3_weak_supervised_learning} has additional robustness to adversarial attacks.
 Although we did not include feedback during inference in our adversarial experiments, we do identify this as a promising direction for future work.
 In this experiment we first trained a two-layer fully-connected ReLU (MLP) model on the MNIST dataset as our control model.
 Our comparison model is the LCA trained without supervision and a single-layer perceptron (SLP) classifier trained on LCA activations.
-Both models were trained to comparable validation accuracy.
+Both models were trained to have comparable validation accuracy.
 Figure \ref{fig:ch4_adversarial_mlp_vs_lca} gives the original input to perturbed image MSE for three attack types: most-likely adversarial targeted, least-likely adversarial targeted, and untargeted.
 The first attack type takes the second highest candidate class (in terms of the softmax confidence output) and adversarially perturbs the input to that class.
 The second type takes the lowest candidate class and perturbs to it.
@@ -524,7 +533,7 @@ For the second generative attack, the perturbation was done by minimizing a loss
 
 
 \subsubsection{Comparing to the LISTA network}
-The lateral connectivity in the LCA network is implemented via a recurrent computation. These dynamics facilitate a form of explaining away, where neurons that have a high degree of correspondence with the input stimulus suppress other neurons in the network. This results in the network ignoring input pixels that are not aligned with primary data directions. To better understand the role of the recurrent computation, we trained a network that acts as an unrolled version of LCA, where the lateral connectivity and feedforward weight matrices are learned. The LISTA model is a recurrent network with many fewer inference steps that can produce codes that have a small Euclidean distance to the outputs of sparse coding \parencite{gregor2010learning}. We trained three LISTA models with 5, 20, and 50 layers. All three models were trained to produce codes that had approximately the same $l_{2}$ distance from the codes produced by 50 steps of LCA inference. We show in figure \ref{fig:ch4_adversarial_lista_vs_lca} that the LISTA network does not perform as well as LCA at defending against adversarial attacks and that the deeper LISTA networks perform no better. The attacks follow methods in (\cite{carlini2017towards}, ``Carlini'' targeted attack) and (\cite{kurakin2016adversarial}, ``Kurakin'' untargeted attack). For the Carlini attack we ran 10,000 steps with a step size of 0.001 and report the resulting MSE. The adversarial confidences for the Carlini attack were 55\%, 55\%, 56\%, and 48\% for LISTA 5, 20, 50, and LCA, respectively. For the Kurakin attack we run the attack until it reaches an average adversarial confidence of $\sim 95$\%. 
+The lateral connectivity in the LCA network is implemented via a recurrent computation. These dynamics facilitate a form of explaining away, where neurons that have a high degree of correspondence with the input stimulus suppress other neurons in the network. This results in the network ignoring input pixels that are not aligned with primary data directions. To better understand the role of the recurrent computation, we trained a network that acts as an unrolled version of LCA, where the lateral connectivity and feedforward weight matrices are learned. The LISTA model is a recurrent network with many fewer inference steps that can produce codes that have a small Euclidean distance to the outputs of sparse coding \parencite{gregor2010learning}. We trained three LISTA models with 5, 20, and 50 layers. All three models were trained to produce codes that had approximately the same $l_{2}$ distance from the codes produced by 50 steps of LCA inference. We show in figure \ref{fig:ch4_adversarial_lista_vs_lca} that the LISTA network does not perform as well as LCA at defending against adversarial attacks and that the deeper LISTA networks perform no better. The attacks follow methods in (\cite{carlini2017towards}, ``Carlini'' targeted attack) and (\cite{kurakin2016adversarial}, ``Kurakin'' untargeted attack). For the Carlini attack we ran 10,000 steps with a step size of 0.001 and report the resulting MSE. The average adversarial confidences for the Carlini attack were 55\%, 55\%, 56\%, and 48\% for LISTA 5, 20, 50, and LCA, respectively. For the Kurakin attack we run the attack until it reaches an average adversarial confidence of $\sim 95$\%. 
 
 \begin{figure}[h]
     \centering
@@ -539,13 +548,6 @@ The lateral connectivity in the LCA network is implemented via a recurrent compu
 %The LCA objective is derived from a model of natural images, so we believe the network will exhibit stronger aversion to adversarial perturbations.
 
 
-
-%TODO:
-%\section{Hierarchical models exhibit endo-origin curvature}
-% https://docs.google.com/presentation/d/1Vzk_fVGO-ERQDjKWRvzuHpV6YGwUriD6NyJNpf-WbVE/edit#slide=id.g4264a47c80_0_60
-% would want to recompute curvatures for all neurons
-% slide 80 covers lca+pca model, can show that curvature.
-% then slide 73 gives subspace_lca curvature.
 
 %TODO:
 %\section{Explaining extra-classical receptive field effects}
@@ -566,7 +568,7 @@ Although the softmax nonlinearity used in most classification models is a popula
 
 Additional control models need to be explored, including alternative population nonlinearities such as those present in Boltzmann machines \parencite{salakhutdinov2009deep}, divisive normalization \parencite{balle2016end}, and local response normalization \parencite{krizhevsky2012imagenet}. Each of these nonlinearities has had significance in the deep learning and neuroscience communities. The iso-response analysis provides a methodology for contrasting them and will give us valuable insight into how each of them may respond to adversarial attacks. We also wish to scale up the models to include larger datasets of more naturalistic images. 
 
-The hierarchical extension to the sparse coding model proposed in \parencite{chen2018sparse} has been shown by our group to perform a better job of mapping input data onto a smooth manifold. We hypothesize that this will further increase the semantic relevance of attacks and model robustness against adversarial perturbations. We identify the model defined in \parencite{chen2018sparse} as a candidate for exploring how the adversarial and iso-response properties change as we increase the network depth.
+The hierarchical extension to the sparse coding model proposed in \parencite{chen2018sparse} has been shown to perform a better job of mapping input data onto a smooth manifold. We hypothesize that this will further increase the semantic relevance of attacks and model robustness against adversarial perturbations. We identify the model defined in \parencite{chen2018sparse} as a candidate for exploring how the adversarial and iso-response properties change as we increase the network depth.
 
 This methodology has a high potential for impact in the deep learning community. We advocate for biologically motivated computations that go beyond the simple pointwise nonlinear model. We have shown that these types of networks learn a more robust representation of data without tedious and biased human labeling. We also provide strong theoretical support for our hypotheses and an analysis method that allows us to fully characterize how the more complicated neurons will respond to input perturbations.
 

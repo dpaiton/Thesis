@@ -23,16 +23,21 @@ Our model assumes a prior probability over the images, $P(s)$, and the activity 
 We model the noise distribution as Gaussian, which we justify by assuming that the generative model can account for everything except for random, uncorrelated (i.e. independent) causes that combine in the limit to follow a Gaussian distribution. Under this assumption, we can specify the probability density function for our image likelihood:
 
 \begin{equation}\label{eq:ch2_image_likelihood}
-    P(s|a,\Phi) \propto e^{-\frac{1}{2\sigma_{i}^{2}}|s-\phi a|^{2}},
+    P(s|a,\Phi) \propto e^{-\frac{1}{2\sigma_{n}^{2}}|s-\phi a|^{2}},
 \end{equation}
 
-\noindent where $\sigma$ is the standard deviation of the additive noise. Our goal is to encode the images as efficiently as possible. To do this, we impose a factorial (i.e. independent) prior on the coefficients that is highly peaked at 0, which encourages most of the neurons to be silent for any given input signal. If we assume that the mean of the image distribution exists at $\Phi a$, then the probability density function for our coefficient prior to be a maximum entropy distribution (with infinite variance) is the following Laplacian:
+\noindent where $\sigma_{n}$ is the standard deviation of the additive noise. Our goal is to encode the images as efficiently as possible. To do this, we impose a factorial (i.e. independent) prior on the coefficients that is highly peaked at 0, which encourages most of the neurons to be silent for any given input signal. If we assume that the mean of the image distribution exists at $\Phi a$, then the probability density function for our coefficient prior to be a maximum entropy distribution (with infinite variance) is the following Laplacian:
 
-%TODO: Should these be f(a), etc? this is the functional form of the PDF right? so f(x) instead of P(x)?
+%TODO: Should these be f(a), etc? this is the functional form of the PDF right? so f(x) instead of P(x)? actually they should be little ps bc little p is a density function
+% TODO: This sigma corresponds to the scale of the coefficients, not the same sigma as in the data. Just use lambda, say it is proportional to the variance. It should multiply the activation
 \begin{equation}\label{eq:ch2_coefficient_prior}
     P(a) \propto \prod_{i}\frac{1}{\lambda} e^{\frac{-|a_{i}|}{\lambda}},
 \end{equation}
 
+%we're also assuming a Gaussian prior on the basis functions
+% it's not from noise assumption
+% move this down to where we derive the weight update rule
+% in practice we approximate this prior by forcing the basis functions to be unit length after each update step, which is akin to projected gradient descent
 \noindent where $\lambda = \tfrac{1}{\sigma^{2}}$. Finally, our Gaussian noise assumption also requires us to impose an $l_{2}$ prior on the pixel dimension of the dictionary:
 
 \begin{equation}\label{eq:ch2_dictionary_prior}
@@ -60,6 +65,7 @@ In the final step we dropped a constant term that is equal to a product of the n
 
 The probability of the image under the model, $P(s|\Phi)$ is obtained by marginalizing over the activations:
 
+%TODO: da not partial a
 \begin{equation}\label{eq:ch2_image_probability}
     P(s|\Phi) = \int P(s|a,\Phi) P(a) \partial a 
 \end{equation}
@@ -77,6 +83,10 @@ If we wish to find the optimal dictionary, then we would again want to maximize 
     \nabla_{\Phi} \log{P(s|\Phi)} = \left< \left[s - \Phi a\right]a^{\top}\right>_{P(a|s,\Phi)}.
 \end{equation}
 
+% p(phi|s) is posterior, which is what we really want to find. add weight decay term
+% Expectation exactly comes from integral
+% usually people will do this with a monte-carlo type process
+% instead of sampling from the coefficients a to integrate over the entire state space (or close to), we will take a single sample in the form of the MAP estimate.
 The expectation in equation \eqref{eq:ch2_probability_weight_update} tells us that we must do inference under the posterior. As we will see in the following section, the learning and inference rules can be derived directly from the same energy function, which is the negative of equation \eqref{eq:ch2_log_likelihood}. Then we will make a simple change to the inference rule to define the LCA. Finally, we will verify some known properties of sparse coding on natural images and derive comparisons to similar models.
 
 
@@ -268,6 +278,7 @@ As we will expand on in chapter \ref{ch:iso}, the LCA makes explicit predictions
 % TODO: Are verticle / horizontal RFs also more frequent in v1?
 It has been shown previously that sparse coding will learn a dictionary of features that tile spatial position, frequency, and orientation \parencite{olshausen1996emergence, olshausen1997sparse}. We reproduce this finding while also varying the overcompleteness of the model in figure \ref{fig:ch2_lca_overcompleteness_tiling}. We find that as overcompleteness increases, the density of the tiling also increases. Additionally, the model learns higher spatial frequency features and a more even distribution of orientations when more overcomplete. It is also interesting that the models tend to learn significantly more features that are aligned with the vertical and horizontal axis of the input images, which is well matched to image statistics \parencite{switkes1978spatial, torralba2003statistics}. We also show in figure \ref{fig:ch2_lca_angle_histograms} that when we increase overcompleteness, the neurons have more similar receptive fields as indicated by a smaller angle between weight vectors.
 
+% TODO: make spatial freq (top) half plane instead of quarter
 \begin{figure}[ht]
     \centering
     \includegraphics[width=0.8\textwidth]{figures/lca_overcompleteness_location_frequency_centers.png}
@@ -365,7 +376,7 @@ Here we will draw comparisons between the LCA and the predictive coding model \p
 The objective of this investigation is to explore the encoding processes for sparse coding and predictive coding assuming that we are given a trained dictionary. In our sparse coding energy function (equation \eqref{eq:ch2_sparse_energy}), we use $\lambda$ as a trade-off penalty between the reconstruction quality and the sparsity constraint. In practice we tune it to maximize network sparsity for a minimum accepted reconstruction quality. In Olshausen and Field, \citeyearpar{olshausen1997sparse}, their choice of cost function, $C(.)$, specified a Cauchy distribution for the prior on $a$:
 
 \begin{equation}\label{eq:ch2_cauchy_cost}
-  C(a_{i}) = log(1+a_{i}^{2})
+  C(a_{i}) = \log(1+a_{i}^{2})
 \end{equation}
 
 For a learned dictionary, to encode an input image we compute a coefficient vector, $a$. Our coefficients (neuron activations) adapt to minimize the energy function described in equation \eqref{eq:ch2_sparse_energy}. The standard way to do this is to perform direct gradient descent on the energy function, following equation \eqref{eq:ch2_lca_deda_extended}, which we will rewrite here with a small algebraic change:
