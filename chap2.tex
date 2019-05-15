@@ -4,7 +4,10 @@
 Sparse coding is a generative model for explaining natural signals. In other words, it models the joint probability distribution between natural signals and a latent code such that it is able to generate new naturalistic signals from the code. Although the model and motivating theory have been explored in other modalities, here we will focus on coding visual stimulus as a proxy for computations performed by layer 4 simple cells in V1. We will begin this chapter with a probabilistic derivation for the sparse coding model. Importantly, this will make clear the various assumptions built into the model, which will be relevant for our interpretations of results in later chapters. The first section will get us to an energy function that a sparse coding algorithm would seek to minimize. In the second section, we recapitulate the sparse coding model from an optimization perspective. Next, we derive the Locally Competitive Algorithm (LCA), which is a neural network model designed to perform sparse inference. This network is the subject of the rest of the thesis. Finally, we compare the LCA to other popular neurally-inspired image coding models, namely Predictive Coding \parencite{rao1999predictive} and ICA \parencite{bell1997independent}. Depending on the context, we may refer to the connections between pixels and neurons as a matrix of weight vectors, a dictionary of elements, or a set of basis functions - these should be considered synonymous in this work.
 
 \section{A probabilistic approach for image coding}
-As was explained in chapter \ref{ch:intro}, the signal coming from the two-dimensional retina is incomplete and the problem of inferring the exact three-dimensional structure of the world from that signal is impossible. However, some solutions are more likely than others and ecological pressure encourages brains to perceive highly likely solutions. If population activity in the brain represents possible hypotheses about the world, then we want to model it in a probabilistic, Bayesian framework. In this section, we derive such a framework and shows that sparse coding approximately solves it.
+As was explained in chapter 1, the signal coming from the two-dimensional retina is incomplete and the problem of inferring the exact three-dimensional structure of the world from that signal is impossible. % TODO: Fix chapter ref
+However, some solutions are more likely than others and ecological pressure encourages brains to perceive highly likely solutions.
+If population activity in the brain represents possible hypotheses about the world, then we want to model it in a probabilistic, Bayesian framework.
+In this section, we derive such a framework and shows that sparse coding approximately solves it.
 
 We aim to encode an incoming signal efficiently under the assumption that the signal is composed of structured components and unstructured additive noise. We do this with sparse coding, which assumes a linear generative model:
 
@@ -14,26 +17,26 @@ We aim to encode an incoming signal efficiently under the assumption that the si
 
 \noindent where $s$ is our input signal, $\Phi$ is an overcomplete (in that the number of columns in $\Phi$ is greater than the number of rows) dictionary of functions, $a$ is a row vector of activation coefficients, and $\varepsilon$ is Gaussian noise (which we justify below). For a given input signal, we must solve the ill-posed task of inferring an optimal set of coefficients. The problem is difficult in part because the noise is unknown and therefore cannot be completely accounted for. Another reason is that the dictionary is overcomplete and thus non-orthogonal, resulting in an infinite number of possible combinations that are each equally valid representations. Following the works of Olshausen and colleagues \parencite{olshausen1996learning, olshausen2003principles, karklin1999porbabilistic}, we will derive a probabilistic generative model for computing image codes. Additionally, we can follow a similar derivation to learn a dictionary that maximizes coding efficiency. This gives us a principled and extendable foundation from which we can derive sparse coding and similar models.
 
-Our model assumes a prior probability over the images, $P(s)$, and the activity coefficients, $P(a)$. We also assume that the coefficient prior does not depend on the dictionary itself; that is $P(a|\Phi) = P(a)$. Although in practice the coefficients and dictionary will be jointly optimized, we can adhere to this last assumption by fixing one variable while optimizing the other in an expectation-maximization-like procedure. We specify the likelihood of an image under the model for a given state of coefficients as $P(s|a,\Phi)$. Conversely, given evidence in the form of an image sample, we can define the posterior as the conditional probability distribution of our coefficients given the image and model: $P(a|s,\Phi)$. Our goal is to maximize this posterior distribution, which gives us the most probable estimate of the coefficients. As is done in \parencite{karklin1999porbabilistic}, we can relate the likelihood and posterior using Bayes' rule:
+Our model assumes a prior probability over the images, $p(s)$, and the activity coefficients, $p(a)$. We also assume that the coefficient prior does not depend on the dictionary itself; that is $p(a|\Phi) = p(a)$. Although in practice the coefficients and dictionary will be jointly optimized, we can adhere to this last assumption by fixing one variable while optimizing the other in an expectation-maximization-like procedure. We specify the likelihood of an image under the model for a given state of coefficients as $p(s|a,\Phi)$. Conversely, given evidence in the form of an image sample, we can define the posterior as the conditional probability distribution of our coefficients given the image and model: $p(a|s,\Phi)$. Our goal is to maximize this posterior distribution, which gives us the most probable estimate of the coefficients. As is done in \parencite{karklin1999porbabilistic}, we can relate the likelihood and posterior using Bayes' rule:
 
 \begin{equation}\label{eq:ch2_bayes}
-    P(a|s,\Phi) \propto P(s|a,\Phi) P(a)
+    p(a|s,\Phi) \propto p(s|a,\Phi) p(a)
 \end{equation}
 
 We model the noise distribution as Gaussian, which we justify by assuming that the generative model can account for everything except for random, uncorrelated (i.e. independent) causes that combine in the limit to follow a Gaussian distribution. Under this assumption, we can specify the probability density function for our image likelihood:
 
 \begin{equation}\label{eq:ch2_image_likelihood}
-    P(s|a,\Phi) \propto e^{-\frac{1}{2\sigma_{n}^{2}}|s-\phi a|^{2}},
+    p(s|a,\Phi) \propto e^{-\frac{1}{2\sigma_{n}^{2}}|s-\phi a|^{2}},
 \end{equation}
 
 \noindent where $\sigma_{n}$ is the standard deviation of the additive noise. Our goal is to encode the images as efficiently as possible. To do this, we impose a factorial (i.e. independent) prior on the coefficients that is highly peaked at 0, which encourages most of the neurons to be silent for any given input signal. If we assume that the mean of the image distribution exists at $\Phi a$, then the probability density function for our coefficient prior to be a maximum entropy distribution (with infinite variance) is the following Laplacian:
 
-%TODO: Should these be f(a), etc? this is the functional form of the PDF right? so f(x) instead of P(x)? actually they should be little ps bc little p is a density function
 % TODO: This sigma corresponds to the scale of the coefficients, not the same sigma as in the data. Just use lambda, say it is proportional to the variance. It should multiply the activation
 \begin{equation}\label{eq:ch2_coefficient_prior}
-    P(a) \propto \prod_{i}\frac{1}{\lambda} e^{\frac{-|a_{i}|}{\lambda}},
+    p(a) \propto \prod_{i}\frac{1}{\lambda} e^{\frac{-|a_{i}|}{\lambda}},
 \end{equation}
 
+%TODO:
 %we're also assuming a Gaussian prior on the basis functions
 % it's not from noise assumption
 % move this down to where we derive the weight update rule
@@ -41,15 +44,15 @@ We model the noise distribution as Gaussian, which we justify by assuming that t
 \noindent where $\lambda = \tfrac{1}{\sigma^{2}}$. Finally, our Gaussian noise assumption also requires us to impose an $l_{2}$ prior on the pixel dimension of the dictionary:
 
 \begin{equation}\label{eq:ch2_dictionary_prior}
-    P(\Phi_{i}) \propto \frac{1}{\sqrt{2\pi}\sigma^{2}}e^{\frac{-\sum_{j}|\Phi_{i,j}|^{2}}{\sigma^{2}}}.
+    p(\Phi_{i}) \propto \frac{1}{\sqrt{2\pi}\sigma^{2}}e^{\frac{-\sum_{j}|\Phi_{i,j}|^{2}}{\sigma^{2}}}.
 \end{equation}
 
 Now that we have densities for our probabilities, we can write down the log-likelihood of our model, which we will later define as the negative of the sparse coding energy function:
 
 \begin{align}\label{eq:ch2_log_likelihood}
 \begin{split}
-    L &= \log\left(P(s|a,\Phi)P(a)\right) \\
-      &= \log{P(s|a,\Phi)} + \log{P(a}) \\
+    L &= \log\left(p(s|a,\Phi)p(a)\right) \\
+      &= \log{p(s|a,\Phi)} + \log{p(a}) \\
       &= -\frac{\lambda}{2}|s - \Phi a|^{2} - \sum_{i}|a_{i}|.
 \end{split}
 \end{align}
@@ -58,29 +61,29 @@ In the final step we dropped a constant term that is equal to a product of the n
 
 \begin{align}\label{eq:ch2_min_log_likelihood}
 \begin{split}
-    \max_{a} P(a|s,\Phi) &= \max_{a}\left[\log{P(s|a,\Phi)} + \log{P(a)}\right] \\
+    \max_{a} p(a|s,\Phi) &= \max_{a}\left[\log{p(s|a,\Phi)} + \log{p(a)}\right] \\
                          &= \min_{a}\frac{\lambda}{2}|s - \Phi a|^{2} + \sum_{i}|a_{i}|.
 \end{split}
 \end{align}
 
-The probability of the image under the model, $P(s|\Phi)$ is obtained by marginalizing over the activations:
+The probability of the image under the model, $p(s|\Phi)$ is obtained by marginalizing over the activations:
 
 %TODO: da not partial a
 \begin{equation}\label{eq:ch2_image_probability}
-    P(s|\Phi) = \int P(s|a,\Phi) P(a) \partial a 
+    p(s|\Phi) = \int p(s|a,\Phi) p(a) \partial a 
 \end{equation}
 
-If we wish to find the optimal dictionary, then we would again want to maximize the log of equation \eqref{eq:ch2_image_probability}. However, it is not tractable to integrate over the coefficients to find the marginals, so instead we use a MAP estimate. This is a fair estimate if the model is sure of the posterior, that is to say that $P(a|s,\Phi)$ truly follows a highly peaked distribution with heavy tails (i.e. the distribution has high kurtosis). Given this assumption, we define the log of the probability of the image under the model:
+If we wish to find the optimal dictionary, then we would again want to maximize the log of equation \eqref{eq:ch2_image_probability}. However, it is not tractable to integrate over the coefficients to find the marginals, so instead we use a MAP estimate. This is a fair estimate if the model is sure of the posterior, that is to say that $p(a|s,\Phi)$ truly follows a highly peaked distribution with heavy tails (i.e. the distribution has high kurtosis). Given this assumption, we define the log of the probability of the image under the model:
 
 \begin{equation}\label{eq:ch2_log_image_probability}
-    \log{P(s|\Phi)} = \log{\int P(s|a,\Phi)P(a)\partial a},
+    \log{p(s|\Phi)} = \log{\int p(s|a,\Phi)p(a)\partial a},
 \end{equation}
 
 \noindent and take the gradient with respect to our weights to give us a weight update rule:
 
 % TODO: add in explanation of where terms on the right come from.
 \begin{equation}\label{eq:ch2_probability_weight_update}
-    \nabla_{\Phi} \log{P(s|\Phi)} = \left< \left[s - \Phi a\right]a^{\top}\right>_{P(a|s,\Phi)}.
+    \nabla_{\Phi} \log{p(s|\Phi)} = \left< \left[s - \Phi a\right]a^{\top}\right>_{p(a|s,\Phi)}.
 \end{equation}
 
 % p(phi|s) is posterior, which is what we really want to find. add weight decay term
@@ -112,7 +115,14 @@ Depending on the choice of cost function, solving equation \eqref{eq:ch2_sparse_
 
 
 \section{The Locally Competitive Algorithm}\label{sec:ch2_lca}
-The Locally Competitive Algorithm (LCA) is a method for computing a sparse code from a given input signal and dictionary and was original described by Christopher J. Rozell and colleagues \citeyearpar{rozell2008sparse}. The model describes an activation coefficient, $a_{k}$, as the thresholded output of some model neuron's internal state, $u_{k}$, which is analogous to the neuron's membrane potential. This internal state follows similar dynamics to a leaky integrator neuron model. The LCA can be described as a continuous system that is implementable in hardware, or as a discrete system with an internal state that advances as a function of a time step. If implemented in hardware, you can follow current dynamics (Kirchhoff's law for an equivalent RC circuit) to perform inference extremely quickly \parencite{rozell2008sparse}. As the model state advances, the system relaxes to a minimum solution of the energy function described in equation \eqref{eq:ch2_sparse_energy}. Here we will derive the dynamical equation for computing the state transitions from the energy function.
+The Locally Competitive Algorithm (LCA) is a method for computing a sparse code from a given input signal and dictionary and was original described by Christopher J. Rozell and colleagues \citeyearpar{rozell2008sparse}. The model describes an activation coefficient, $a_{k}$, as the thresholded output of some model neuron's internal state, $u_{k}$, which is analogous to the neuron's membrane potential. This internal state follows similar dynamics to a leaky integrator neuron model. The LCA can be described as a continuous system that is implementable in hardware, or as a discrete system with an internal state that advances as a function of a time step. If implemented in hardware, you can follow current dynamics (Kirchhoff's law for an equivalent RC circuit) to perform inference extremely quickly \parencite{rozell2008sparse}. As the model state advances, the system relaxes to a minimum solution of the energy function described in equation \eqref{eq:ch2_sparse_energy}. Figure \ref{fig:ch2_lca_diagram} gives a schematic drawing of the LCA network. In this section we will derive the dynamical equation for computing the state transitions from the sparse coding energy function.
+
+\begin{figure}[h]
+    \centering %center using container as reference, instead of the whole text
+    \includegraphics[width=0.4\textwidth]{figures/lca_diagram.png}
+    \caption{\textbf{LCA architecture.} The LCA network includes feedforward driving connections, $\Phi$ as well as a lateral connectivity matrix, $G$. The dark arrows are connections for neuron $k$. All other connections are denoted by dotted lines.}
+    \label{fig:ch2_lca_diagram}
+\end{figure}
 
 We wish for our neuron activations to minimize the energy function described in equation \eqref{eq:ch2_sparse_energy}. This will be accomplished via gradient descent on the energy function. To illustrate the derivative, we first express the energy function in subscript notation:
 
@@ -231,10 +241,18 @@ In addition to finding a sparse code, we are also interested in learning a set o
 
 \noindent where $\eta$ is the learning rate and $\hat{s}$ is the image reconstruction. To recap, for a given image sample we first find our image code, $a$, for a fixed dictionary, $\Phi$, and then using that code to update the dictionary with equation \eqref{eq:ch2_phi_update}.
 
-% TODO diagrams comparing feed-forward network to LCA network
+% TODO diagrams with math comparing feed-forward network to LCA network?
 %https://docs.google.com/presentation/d/1Vzk_fVGO-ERQDjKWRvzuHpV6YGwUriD6NyJNpf-WbVE/edit#slide=id.g4f9127c786_0_76
 
 \subsection{The Convolutional LCA}
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=\textwidth]{figures/lca_conv_benefits.png}
+    \caption{\textbf{The convolutional LCA has unique coding properties.} The convolutional LCA (overlap, green lines) has better encoding properties than the patch-based LCA (no overlap, blue lines) in terms of stability and energy. We hypothesize that this is an effect of global competition across the image that is afforded by the convolutional architecture. Note that the patch-based LCA is still sharing weights between patches; it is acting as if each patch was encoded independently with the same model. For video input, we recorded the percent change in coefficients from one frame to the next as a function of the number of inference steps performed on each frame. The left plot shows that convolutional variant is more stable earlier in inference, and approximately equally stable after both variants have converged. Additionally, the convolutional LCA settles to a lower mean squared error between the input and reconstruction (middle plot), and is more sparse (right plot) than the patch-based model. This figure was reproduced from unpublished work done with the Kenyon lab \parencite{paiton2013deep}.}
+    \label{fig:ch2_lca_conv_benefit}   
+\end{figure}
+
 In this thesis, unless otherwise noted, it should be assumed that we are using the fully-connected variant of the LCA, in which each neuron is connected to every pixel in the input. However, the LCA can also be easily extended to be convolutional to scale it up to larger images. There are benefits to using convolutional over fully-connected LCA: it is more amenable popular GPU computing architectures, it converges to lower minima, and it is more stable when encoding video. However, some drawbacks are that it no longer has a straight forward analog hardware implementation and it diverges from the type of connectivity we see in the brain. A possible better alternative to convolution would be to use local (i.e. tiled) connectivity, as was done in \parencite{le2011building} and \parencite{ngiam2010tiled}. At the time of writing we are unaware of any attempt to use this type of connectivity with the LCA.
 
 We will occasionally use the convolutional LCA to scale up experiments to larger inputs. For a neural-network oriented introduction to convolution, see \parencite{goodfellow2016deep}. The convolution will be parameterized by the kernel size, number of kernels, and stride. If the stride is equal to the patch size (i.e. no overlap), then this model implements the regular patch-based LCA that operates on an entire image worth of patches independently, but simultaneously.
@@ -253,13 +271,6 @@ For the convolutional LCA, we write our energy function in terms of a ``deconvol
 
 \noindent where $\ast$ is convolution and $e = s - \hat{s}$ is the residual error. In this variant, the driving force to the neurons is the error, instead of the $b_{k}$ term in equation \eqref{eq:ch2_lca_deda_simple}. This means that every neuron that is competing for the image reconstruction will contribute to driving neuron $k$, even if it is in a different convolutional position. The effects of this global competition across the image appear to give the model an advantage in terms of finding an energy minima and stability, which we demonstrate in figure \ref{fig:ch2_lca_conv_benefit}.
 
-\begin{figure}[h]
-    \centering
-    \includegraphics[width=\textwidth]{figures/lca_conv_benefits.png}
-    \caption{\textbf{The convolutional LCA has unique coding properties.} The convolutional LCA (overlap, green lines) has better encoding properties than the patch-based LCA (no overlap, blue lines) in terms of stability and energy. We hypothesize that this is an effect of global competition across the image that is afforded by the convolutional architecture. Note that the patch-based LCA is still sharing weights between patches; it is acting as if each patch was encoded independently with the same model. For video input, we recorded the percent change in coefficients from one frame to the next as a function of the number of inference steps performed on each frame. The left plot shows that convolutional variant is more stable earlier in inference, and approximately equally stable after both variants have converged. Additionally, the convolutional LCA settles to a lower mean squared error between the input and reconstruction (middle plot), and is more sparse (right plot) than the patch-based model. This figure was reproduced from unpublished work done with the Kenyon lab \parencite{paiton2013deep}.}
-    \label{fig:ch2_lca_conv_benefit}   
-\end{figure}
-
 
 \subsubsection{A note on convolutional overcompleteness}
 In patch-based sparse coding, we compute the network overcompleteness by dividing the number of neurons by the number of pixels. However, with convolutional sparse coding there is a caveat that the neighboring inputs have shared weights. Therefore, directly expressing the overcompleteness as number of outputs / number of inputs misrepresents the number of unique weights in the model. Even more nuanced is that the LCA typically learns weights that tile all possible positions in the image patch, which is not as necessary with a convolutional model since the convolution operation translates weights across the image. As a result, all weights learned with convolution tend to be centered in their patch. With all of this in mind, we will denote convolutional overcompleteness as the number of kernels divided by the product of the horizontal (x) and vertical (y) strides: $o = \tfrac{f}{s_{x}*s_{y}}$. Therefore, within reasonable parameter ranges, you can effectively increase the overcompleteness by increasing the number of kernels or by decreasing the stride, which is important when considering computational constraints \parencite{schultz2014replicating}. From this we can also conclude that overcompleteness is not dependent on the patch size, which has been exploited for learning disparity selective neurons that require large receptive fields \parencite{lundquist2016sparse}.
@@ -268,20 +279,32 @@ In patch-based sparse coding, we compute the network overcompleteness by dividin
 \subsection{Postdictions from the LCA}
 % TODO: this paragraph references sec:ch2_alternative_image_coding_models after referencing linear/nonlinear neuron models. I don't currently include a discussion on those models in that section.
 %TODO: note haider et al work and adesnik work at the end of this paragraph
-In their landmark paper, Olshausen and Field \citeyearpar{olshausen1996emergence} show that the sparse coding model learns oriented, band-pass receptive fields. These are well matched to fits of the linear approximations of receptive fields of mammalian V1 simple cells obtained via spike-triggered averaging \parencite{vanHateren1998independent}. They argue that this supports the hypothesis that the V1 neural population encodes visual stimulus using an efficient wavelet-like dictionary. This result has been replicated a number of times with various types of sparse coding models \parencite{zylberberg2011sparse, zylberberg2013sparse, rehn2007network}. As a followup to this study, \parencite{zhu2013visual} show that the LCA network also exhibits a variety of extra-classical (i.e. non-linear) receptive field effects, including end-stopping, cross-orientation inhibition, and surround suppression. This is an important finding, as it shows that a single LCA network trained on natural scenes matches many linear and non-linear empirical effects found with biological neurons. Most studies of these non-linear effects employ unique models that are extended from the classic linear/non-linear neuron model (see section \ref{sec:ch2_alternative_image_coding_models}) for each effect found, while Zhu and Rozell are able to demonstrate many effects with a single model. In Chapter \ref{ch:iso} we will argue that these effects result from the explaining away process during sparse inference. In \parencite{vinje2000sparse}, the authors find that stimulating the nCRF (non-classical receptive field) with naturalistic stimuli causes pairs of V1 neurons to become more decorrelated in their response. They observed ``dramatically increased sparseness'' when stimulating nCRFs, and suggest that a consequence of this ``is increased independence of the responses across cells''.
+In their landmark paper, Olshausen and Field \citeyearpar{olshausen1996emergence} show that the sparse coding model learns oriented, band-pass receptive fields.
+These are well matched to fits of the linear approximations of receptive fields of mammalian V1 simple cells obtained via spike-triggered averaging \parencite{vanHateren1998independent}.
+They argue that this supports the hypothesis that the V1 neural population encodes visual stimulus using an efficient wavelet-like dictionary.
+This result has been replicated a number of times with various types of sparse coding models \parencite{zylberberg2011sparse, zylberberg2013sparse, rehn2007network}.
+As a followup to this study, \parencite{zhu2013visual} show that the LCA network also exhibits a variety of extra-classical (i.e. non-linear) receptive field effects, including end-stopping, cross-orientation inhibition, and surround suppression.
+This is an important finding, as it shows that a single LCA network trained on natural scenes matches many linear and non-linear empirical effects found with biological neurons.
+Most studies of these non-linear effects employ unique models that are extended from the classic linear/non-linear neuron model for each effect found, while Zhu and Rozell are able to demonstrate many effects with a single model.
+In chapter 4 we will argue that these effects result from the explaining away process during sparse inference. %TODO: fix chapter refs
+In \parencite{vinje2000sparse}, the authors find that stimulating the nCRF (non-classical receptive field) with naturalistic stimuli causes pairs of V1 neurons to become more decorrelated in their response.
+They observed ``dramatically increased sparseness'' when stimulating nCRFs, and suggest that a consequence of this ``is increased independence of the responses across cells''.
 
-As we will expand on in chapter \ref{ch:iso}, the LCA makes explicit predictions about the existence (and necessity) of population non-linearities among V1 neurons, which facilitate unique responses to natural image stimuli. The model gives important attribution for inhibitory lateral connectivity in V1 \parencite{zhu2015modeling}. In addition to the obvious energy saving motivation for sparse activity, it has been argued that limiting the number of active neurons can result in a more explicit code that is easier to read out by downstream neurons \parencite{olshausen2003principles}. We will explore this in more detail in later chapters.
+As we will expand on in chapter 4, the LCA makes explicit predictions about the existence (and necessity) of population non-linearities among V1 neurons, which facilitate unique responses to natural image stimuli. %TODO: Fix chapter refs
+The model gives important attribution for inhibitory lateral connectivity in V1 \parencite{zhu2015modeling}.
+In addition to the obvious energy saving motivation for sparse activity, it has been argued that limiting the number of active neurons can result in a more explicit code that is easier to read out by downstream neurons \parencite{olshausen2003principles}.
+We will explore this in more detail in later chapters.
 
 
 \section{Properties of the LCA trained on natural images}\label{sec:ch2_lca_properties}
 \subsection{Features learned}
+% TODO: Retrain using a different data sample to see if spatial freqs stay anisotropic
 % TODO: Are verticle / horizontal RFs also more frequent in v1?
-It has been shown previously that sparse coding will learn a dictionary of features that tile spatial position, frequency, and orientation \parencite{olshausen1996emergence, olshausen1997sparse}. We reproduce this finding while also varying the overcompleteness of the model in figure \ref{fig:ch2_lca_overcompleteness_tiling}. We find that as overcompleteness increases, the density of the tiling also increases. Additionally, the model learns higher spatial frequency features and a more even distribution of orientations when more overcomplete. It is also interesting that the models tend to learn significantly more features that are aligned with the vertical and horizontal axis of the input images, which is well matched to image statistics \parencite{switkes1978spatial, torralba2003statistics}. We also show in figure \ref{fig:ch2_lca_angle_histograms} that when we increase overcompleteness, the neurons have more similar receptive fields as indicated by a smaller angle between weight vectors.
+It has been shown previously that sparse coding will learn a dictionary of features that tile spatial position, frequency, and orientation \parencite{olshausen1996emergence, olshausen1997sparse}. We reproduce this finding while also varying the overcompleteness of the model in figure \ref{fig:ch2_lca_overcompleteness_tiling}. We find that as overcompleteness increases, the density of the tiling also increases. Additionally, the model learns higher spatial frequency features and a more even distribution of orientations when more overcomplete. It is also interesting that the models tend to learn significantly more features that are aligned with the vertical and horizontal axis of the input images, which is well matched to image statistics \parencite{switkes1978spatial, torralba2003statistics}. The spatial frequencies also have anisotropy across the vertical axis, which is maintained as you increase overcompleteness. We suspect this is an artifact of the dataset tested, as all three models were trained from the same image patch samples, although we did not test this hypothesis. We also show in figure \ref{fig:ch2_lca_angle_histograms} that when we increase overcompleteness, the neurons have more similar receptive fields as indicated by a smaller angle between weight vectors.
 
-% TODO: make spatial freq (top) half plane instead of quarter
 \begin{figure}[ht]
     \centering
-    \includegraphics[width=0.8\textwidth]{figures/lca_overcompleteness_location_frequency_centers.png}
+    \includegraphics[width=0.8\textwidth]{figures/lca_fits_loc_freq_orien.png}
     \caption{\textbf{Properties of features learned with LCA.} The LCA learns a diverse set of features that tile important signal characteristics when trained on patches from natural scenes. From top to bottom, the rows represent the LCA with 2, 3, and 4 times more neurons than pixels, respectively. From left to right, the columns are the spatial positions, spatial frequencies, and orientations of each function.}
     \label{fig:ch2_lca_overcompleteness_tiling}
 \end{figure}
@@ -295,7 +318,13 @@ It has been shown previously that sparse coding will learn a dictionary of featu
 
 
 \subsection{Inferring sparse codes of natural images with the LCA}
-Inference is a critical component of the sparse coding model. It gives the model the ability to ``explain away'' causes of the input signals \parencite{olshausen1997sparse} and gives neurons a higher degree of selectivity (see chapter \ref{ch:iso}). Figure \ref{fig:ch2_lca_inference_loss} shows the values of the loss function in equation \eqref{eq:ch2_sparse_energy} through inference, demonstrating that the total loss is reduced. Notice that the sparse loss starts at zero, indicating that none of the neurons are contributing to the reconstruction. At the beginning of inference, all of the neurons with weights that have a non-zero inner product with the input will increase their membrane potential without producing any output and without receiving any inhibition from other neurons. It is only after a neuron passes threshold that it starts producing outputs and inhibiting its neighbors. These sub-threshold dynamics can result in a better solution than the standard ISTA framework, which turns on all units with a non-zero inner product with the input at the first inference step \parencite{rozell2008sparse}.
+Inference is a critical component of the sparse coding model.
+It gives the model the ability to ``explain away'' causes of the input signals \parencite{olshausen1997sparse} and gives neurons a higher degree of selectivity (see chapter 4). %TODO: Fix chapter refs
+Figure \ref{fig:ch2_lca_inference_loss} shows the values of the loss function in equation \eqref{eq:ch2_sparse_energy} through inference, demonstrating that the total loss is reduced.
+Notice that the sparse loss starts at zero, indicating that none of the neurons are contributing to the reconstruction.
+At the beginning of inference, all of the neurons with weights that have a non-zero inner product with the input will increase their membrane potential without producing any output and without receiving any inhibition from other neurons.
+It is only after a neuron passes threshold that it starts producing outputs and inhibiting its neighbors.
+These sub-threshold dynamics can result in a better solution than the standard ISTA framework, which turns on all units with a non-zero inner product with the input at the first inference step \parencite{rozell2008sparse}.
 
 \begin{figure}[h]
     \centering
@@ -305,20 +334,6 @@ Inference is a critical component of the sparse coding model. It gives the model
 \end{figure}
 
 Figure \ref{fig:ch2_lca_inference_traces} gives us an idea of the inference dynamics for a subset of neurons in the LCA network. Each line in the trace plots represents a different term from equation \eqref{eq:ch2_lca_deda_simple}. Nearly all of the traces follow nonlinear trajectories and have interesting sub-threshold dynamics. Figure \ref{fig:ch2_lca_inference_weights} shows the corresponding weights for each of the neuron traces in figure \ref{fig:ch2_lca_inference_traces}.
-
-\begin{figure}[h]
-    \centering
-    \includegraphics[width=\textwidth]{figures/lca_inference_traces.png}
-    \caption{\textbf{Individual trace dynamics for LCA neurons.} Shown are input and output traces for a subset out of 768 LCA neurons during inference. The input image is in the bottom left. Each trace plot has a corresponding weight, shown in figure \ref{fig:ch2_lca_inference_weights}.  The lines in the trace plot represent terms from equation \eqref{eq:ch2_lca_deda_simple}, as indicated in the legend. The grey bars on the left of each trace plot indicate relative scale of the vertical axis. A magenta boundary indicates that the neuron was active at the end of the inference period, and a black boundary indicates otherwise. A dotted boundary indicates that it became active or inactive in the last 20 percent of the inference process.}
-    \label{fig:ch2_lca_inference_traces}
-\end{figure}
-
-\begin{figure}[h]
-    \centering
-    \includegraphics[width=0.5\textwidth]{figures/lca_inference_weights.png}
-    \caption{\textbf{Weights learned when the LCA is trained on natural scenes.} Like other sparse coding variants, dictionary learning with LCA inference produces weights that have a high degree of correspondence to those recorded from mammalian V1 \parencite{zylberberg2011sparse, rehn2007network, olshausen1997sparse}. The weights in this plot correspond to the same neurons as were used to generate the traces in figure \ref{fig:ch2_lca_inference_traces}.}
-    \label{fig:ch2_lca_inference_weights}
-\end{figure}
 
 
 \subsection{The hard thresholded LCA has many energy minima}\label{sec:ch2_hard_lca}
@@ -335,14 +350,14 @@ It is possible to define a variety of valid threshold functions for converging L
 
 As is described in \parencite{rozell2008sparse}, this variant approximates the $l_0$ cost function for $C(\cdot)$ in equation \eqref{eq:ch2_sparse_energy}. The hard thresholded LCA performs similarly to the soft thresholded variant, except that there is no longer a convex energy landscape with a single global minimum. After some number of inference steps, the LCA settles to a stable minima, but in \parencite{shainin2016sampling} we show that the minima reached by a convolutional, rectified, hard thresholded LCA is not a global minima. It is not clear how the amount of information differs between these minima. However, it has been proposed that the brain could represent likely events in a probabilistic framework \parencite{lee2003hierarchical} and that sampling could be a mechanism for decoding signals in higher cortical areas \parencite{hoyer2003interpreting}.
 
-% TODO: Did we do hamming distance on neurons that turned on / off or neurons that changed activity?
+% TODO: verify the distance metric we used - neurons that turned on / off or neurons that changed activity?
 To better understand the energy landscape, we sampled a number of approximately equivalent minima (in terms of energy) for sparse codes produced from weights trained on the CIFAR10 dataset \parencite{krizhevsky2009learning}. We performed this sampling by first allowing the network to settle to a minima for a given image, then perturbing the neuron activations with Gaussian noise, then allowing it to settle again, and repeating for some fixed number of perturbations. We measured the distances between fixed points by counting the number of neurons that changed from active to inactive, which is equivalent to the Hamming distance between binarized (changed threshold or did not) vectors. Figure \ref{fig:ch2_lca_fixed_point_distances} shows that the Hamming distance from the original fixed point to the perturbed fixed point grows as we continue to perturb the network until it reaches a plateau. The figure also shows that the network \textit{always} settles on a different minima.
 
-%TODO: look up this code and figure out hamming distance. Also, add label to right plot (sample number) and to colorbar (hamming distance)?
+%TODO: add label to right plot (sample number) and to colorbar (hamming distance)?
 \begin{figure}[h]
     \centering
     \includegraphics[width=0.75\textwidth]{figures/lca_fixed_point_distances.png}
-    \caption{\textbf{Fixed points of the hard thresholded LCA.} The hard thresholded LCA has a number of valid fixed points in terms of the energy defined in equation \eqref{eq:ch2_sparse_energy}. If you allow the model to settle to a minima, and then perturb the latent code with Gaussian noise, it settles to a different minima. On the left we plot the Hamming distance between codes from the original fixed point to the perturbed fixed point after many perturbations. The Hamming distance is measured by assessing how many neurons \textbf{crossed threshold from active to inactive or vice versa}. On the right we plot the Hamming distances between all pairs of fixed points for all perturbations. All of the off-diagonal values are above 0, which indicates that the model always settled to a unique minima after perturbation. This figure was reproduced from unpublished work with permission from \parencite{shainin2016sampling}.}
+    \caption{\textbf{Fixed points of the hard thresholded LCA.} The hard thresholded LCA has a number of valid fixed points in terms of the energy defined in equation \eqref{eq:ch2_sparse_energy}. If you allow the model to settle to a minima, and then perturb the latent code with Gaussian noise, it settles to a different minima. On the left we plot the Hamming distance between codes from the original fixed point to the perturbed fixed point after many perturbations. The Hamming distance is measured by assessing how many neurons crossed threshold from active to inactive or vice versa. On the right we plot the Hamming distances between all pairs of fixed points for all perturbations. All of the off-diagonal values are above 0, which indicates that the model always settled to a unique minima after perturbation. This figure was reproduced from unpublished work with permission from \parencite{shainin2016sampling}.}
     \label{fig:ch2_lca_fixed_point_distances}
 \end{figure}
 
@@ -362,9 +377,6 @@ In figure \ref{fig:ch2_lca_norms_and_acc}, we show that the $l_{0}$ sparsity of 
 %\subsection{The linear / non-linear neuron model}
 %Simoncelli, etc. Adding components.
 % mathematical comparison from L/NL model to RAE & SAE
-%
-%\subsubsection{LISTA}
-%Learned ISTA.
 %
 %\subsection{Autoencoders}
 %Autoencoders as a NN implementation of L/NL neurons.
@@ -419,9 +431,9 @@ Again we can take the derivative of equation \eqref{eq:ch2_pc_energy_func} to ge
 
 Comparing equations \eqref{eq:ch2_pc_deda} and \eqref{eq:ch2_sc_deda_rewrite}, one can conclude that the two differences between the predictive coding model and sparse coding model are the (potential) use of a non-linear synthesis function and a second layer of processing. This is illustrated pictorially in figure \ref{fig:ch2_lca_pc_comp}.
 
-\begin{figure}[h]
+\begin{figure}[H]
     \centering
-    \includegraphics[width=\textwidth]{./figures/lca_pc_model_comparisons.png}
+    \includegraphics[width=0.9\textwidth]{./figures/lca_pc_model_comparisons.png}
     \caption{\textbf{Comparing the LCA to Predictive Coding.} Sparse approximation can be performed via direct gradient descent on the energy function defined in equation \eqref{eq:ch2_sparse_energy}, which we depict as a dynamic process. Adding a non-linearity to the LCA synthesis function results in a network that is equivalent to a single layer of the predictive coding model. The full model combines two such layers \parencite{rao1999predictive}}
     \label{fig:ch2_lca_pc_comp}
 \end{figure}
@@ -457,3 +469,17 @@ The ICA learning algorithm is simpler and faster than the sparse coding algorith
 
 \section{Conclusion}
 In this chapter we derived the LCA from a probabilistic perspective. We then showed the features learned by the LCA when trained on natural scenes and highlighted some interesting properties of the inference process. Finally, we compared the LCA to alternative image coding models. In the next chapter we will extend the LCA model to a semi-supervised learning framework and a hierarchical framework. In the following chapter we demonstrate how a geometric analysis technique can be used to explain the LCA's high degree of robustness to noise and selectivity when compared to alternative models.
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.5\textwidth]{figures/lca_inference_weights.png}
+    \caption{\textbf{Weights learned when the LCA is trained on natural scenes.} Like other sparse coding variants, dictionary learning with LCA inference produces weights that have a high degree of correspondence to those recorded from mammalian V1 \parencite{zylberberg2011sparse, rehn2007network, olshausen1997sparse}. The weights in this plot correspond to the same neurons as were used to generate the traces in figure \ref{fig:ch2_lca_inference_traces}.}
+    \label{fig:ch2_lca_inference_weights}
+\end{figure}
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=\textwidth]{figures/lca_inference_traces.png}
+    \caption{\textbf{Individual trace dynamics for LCA neurons.} Shown are input and output traces for a subset out of 768 LCA neurons during inference. The input image is in the bottom left. Each trace plot has a corresponding weight, shown in figure \ref{fig:ch2_lca_inference_weights}.  The lines in the trace plot represent terms from equation \eqref{eq:ch2_lca_deda_simple}, as indicated in the legend. The grey bars on the left of each trace plot indicate relative scale of the vertical axis. A magenta boundary indicates that the neuron was active at the end of the inference period, and a black boundary indicates otherwise. A dotted boundary indicates that it became active or inactive in the last 20 percent of the inference process.}
+    \label{fig:ch2_lca_inference_traces}
+\end{figure}

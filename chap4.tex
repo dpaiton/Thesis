@@ -28,8 +28,7 @@ These include divisive normalization \parencite{carandini2012normalization, ball
 
 Consider that a $P$-pixel image can be thought of as a single point in $\mathbb{R}^{P}$.
 To measure a target neuron's iso-response contours, we first choose a two-dimensional cross section (or plane) in the $P$-dimensional space that is defined by two orthogonal vectors.
-For most of the work herein, we will use the target neuron's feed-forward weights as one of the two vectors.
-% TODO: Why are the apostrophes not showing up?
+For most of the work here, we will use the target neuron's feed-forward weights as one of the two vectors.
 To determine the second axis of our image plane, we start by finding another neuron's weight vector that has a nonzero inner-product with our target neuron's weight vector (and thus they are not orthogonal).
 Then, to get an orthonormal basis, we use the Gram-Schmidt process to find a vector orthogonal to our target neuron, but coplanar with our second neuron.
 For competitive networks like the LCA, this method increases the likelihood of competition between neurons and thus increases the curvature. 
@@ -43,13 +42,9 @@ Consider: for a perturbation that is orthogonal to a target neuron's weight vect
 Therefore, iso-response contours for population nonlinear neurons can be bent.
 In figure \ref{fig:ch4_iso_contours} we demonstrate contours for linear and nonlinear neurons.
 
-%TODO: Fix this figure - LCA curve is using MNSIT digits!
-% Also TODO: Include the LCA diagram in the LCA chapter
 \begin{figure}[h]
-    %\vskip -0.05in
     \centering
-    \includegraphics[width=0.5\textwidth]{figures/iso_contour_comparison.png}
-    %\vskip -0.3in
+    \includegraphics[width=\textwidth]{figures/iso_contour_comparison.png}
     \caption{\textbf{Empirically measured iso-response contours.} A fine sampling of points in a 2D plane are injected into the high dimensional image space and used as inputs to a target model neuron, $a_{k}$. The color value indicates a binned normalized response magnitude of the $k^{\text{th}}$ neuron. The red arrow is the weight vector for the neuron, $\Phi_{k}$. The white arrow is an alternate neuron's weight vector.}
     \label{fig:ch4_iso_contours}
 \end{figure}
@@ -71,7 +66,7 @@ We also show that the LCA is more efficient than linear encoding models with ori
 
 \begin{figure}[h]
     \centering
-    \includegraphics[width=\textwidth]{figures/iso_contour_lca_hists.png}
+    \includegraphics[width=0.8\textwidth]{figures/iso_contour_lca_hists.png}
     \caption{\textbf{LCA neurons have high-dimensional exo-origin curvature.} The histogram shows second order coefficients for polynomial fits to the lines in the middle plot. Negative coefficients indicate exo-origin curvature, which tells us that LCA neurons exhibit exo-origin curvature in almost all orthogonal directions tested. The target neuron was randomly selected from a 2x overcomplete LCA model trained on the MNIST dataset with z-score (zero mean, unit standard deviation) preprocessing. We replicated these results for many random neurons. See text for details about random versus targeted directions.}
     \label{fig:ch4_iso_contour_lca_hists}
 \end{figure}
@@ -87,11 +82,6 @@ We also show that the LCA is more efficient than linear encoding models with ori
 
 %TODO: include more schematic slides from oxyopia talk?
 %https://docs.google.com/presentation/d/1Vzk_fVGO-ERQDjKWRvzuHpV6YGwUriD6NyJNpf-WbVE/edit#slide=id.g50750b3c61_0_158
-%TODO:
-% read & cite vilankar2017selectivity
-% Move over figures from oxyopia talk
-% bent contours give neurons selectivity
-% Add discussion about the type of nonlinearity (i.e. not just nonlinear, but population nonlinear) being important as well
 %TODO: Include cross-orientation results?
 %To assess the degree of orientation selectivity for ICA neurons, we replicate the cross-orientation suppression experiment performed by \parencite{zhu2013visual} with both sparse coding and ICA networks.
 \section{Orientation selectivity and efficient coding}\label{sec:ch4_selectivity_efficiency}
@@ -155,10 +145,10 @@ Here, we replicate the rate-distortion analyses from \parencite{eichhorn2009natu
 
 We trained LCA \parencite{rozell2008sparse}, ICA \parencite{bell1997independent}, and PCA (see \cite{jolliffe2016principal} for a recent review) on 1 million 16 x 16 pixel grayscale image patches. Then, using the learned filter matrices, we computed model activations for a test set of 100,000 patches and uniformly quantized these activations with varying degrees of granularity. For each level of granularity, we computed a reconstruction of the test input using the quantized activations as well as the mean squared error. Figure \ref{fig:ch4_rate_distortion} plots the rate (mean marginal discrete entropy of the activations) against the distortion (mean squared error). Results for the LCA trained with different values of $\lambda$ are also shown, where a larger $\lambda$ indicates higher sparsity. We replicate the findings from \parencite{eichhorn2009natural} that (orthogonal) PCA  performs slightly better than ICA in the rate-distortion trade-off. The LCA shows an advantage over both ICA and PCA. Additionally, we find that representations that are more sparse are capable of achieving increasingly lower rates.
 
-% TODO: Get sparsity (lambda) level for image distortions - also, verify that it is off of the RD chart?
+% TODO: Get sparsity (lambda) level for image distortions - also, verify that it is off of the RD chart? - decided to take it out, could put it back in after the todo is solved
 \begin{figure}[h]
     \centering
-    \includegraphics[width=0.5\textwidth]{figures/rate_distortion.png}
+    \includegraphics[width=0.7\textwidth]{figures/rate_distortion.png}
     \caption{\textbf{LCA provides better compression than ICA or PCA.} The rate-distortion plot compares the LCA trained with different sparsity levels against linear transforms. We replicate the finding from \parencite{eichhorn2009natural} that PCA performs slightly better than ICA in the rate-distortion trade-off, however the LCA shows an advantage over both PCA and ICA. Higher values of lambda indicates higher sparsity (i.e. fewer active elements). This figure was reproduced from unpublished work with permission from \parencite{sanborn2016sampling}.}
     \label{fig:ch4_rate_distortion}
 \end{figure}
@@ -169,8 +159,9 @@ Our results suggest the importance of nonlinear encoding for producing efficient
 We demonstrate that the linear ICA neuron and the sigmoid nonlinear neuron used in the sparse autoencoder have broad orientation selectivity when compared to the LCA.
 We also show that although the ICA algorithm is able to learn oriented filters, ICA's linear encoding process limits its capacity to perform genuine orientation selectivity, which in turn limits its capacity to produce an efficient code.
 
-
 % TODO: Distribution shift experiment
+
+
 \section{Iso-response contours predict adversarial attack directions}\label{sec:ch4_adv_defense}
 Biological neurons are highly interconnected, both across and within layers, which gives rise to strong population nonlinear effects.
 However, a large majority of research in neuron modeling uses pointwise nonlinearities due to the ease in interpretation and implementation.
@@ -197,7 +188,6 @@ Congruent with current theories for probabilistic inference in the brain \parenc
 We propose that, together, these modifications will improve the network’s specificity to signals that lie along the data manifold.
 We use adversarial attacks as a mechanism for understanding both traditional pointwise nonlinear ANNs and a population nonlinear alternative.
 
-%TODO: Break up this paragraph
 Adversarial attacks represent a flaw in typical deep neural networks where small targeted perturbations in the input space can cause large undesired changes in the output space.
 Although the discovery of adversarial examples in deep networks is relatively new, it has had a considerable amount of academic attention and an understanding of these attacks has begun to emerge.
 In the pioneering work of Szegedy et al. \citeyearpar{szegedy2013intriguing}, they introduce the idea of ``adversarial attacks'' for deep networks and propose that a non-smooth decision boundary in classification networks produces adversarial ``pockets'', or isolated regions on the data manifold, interspersed among dataset examples.
@@ -207,17 +197,20 @@ The follow up work of Goodfellow et al. \citeyearpar{goodfellow2014explaining} m
 However, we would like to emphasize two important arguments from their work: 1) they present evidence suggesting that the direction of perturbation is more important than the specific point in space (further refuting the ``pockets'' theory), and 2) the adversarial perturbations are highly aligned with the weight vectors of a model.
 The last of those observations has been explored in much more detail by Jetley et al. \citeyearpar{jetley2018friends}, who suggest that deep networks produce classification boundaries based on a small number of features that correspond to high curvature directions in the input space and that these high curvature directions are also the most effective adversarial directions.
 The works of Gilmer et al. \citeyearpar{gilmer2018adversarial} and Ford et al. \citeyearpar{ford2019adversarial} further expand on this idea by suggesting that adversarial attacks confined to the $l_{\infty}$ box represent the worst-case example of the model's inability to account for distributional shift generally.
-However, the works of Kos et al. \citeyearpar{kos2018adversarial} and Goodfellow et al. \citeyearpar{goodfellow2014explaining} demonstrate the ability to produce adversarial examples for pointwise-nonlinear generative models that have applications in image denoising.
-We would expect generative models to preserve information from their inputs and therefore be less susceptible to adversarial attacks.
-Additionally, it has been suggested that denoising in general should help with robustness.
-This work suggests a more nuanced explanation of adversarial susceptibility.
+
 Recent work has also shown that nearly all proposed adversarial defense mechanisms fail in the face of more careful attacks \parencite{carlini2017towards, athalye2018obfuscated}.
 For example, the recent defense method proposed by \cite{sun2018adversarial} claims to produce an adversarially robust preprocessing step, although they use basis pursuit in their methods, which possibly achieves robustness through gradient obfuscation \parencite{athalye2018obfuscated}.
-However, their intuition that images should be forced onto the image manifold as a preprocessing step has great relevance to the work herein.
+However, their intuition that images should be forced onto the image manifold as a preprocessing step has great relevance to our work.
 The work of \cite{jacobsen2018excessive} makes clear the trade-off between adversarial robustness and test accuracy and suggests that excessive invariance of a network should also be considered when understanding adversarial weakness.
 Adversarial perturbations push inputs across decision boundaries such that the semantic quality of the image is largely the same but the label is changed to an incorrect classification.
 It is also possible to arrive at the same result by generating an image such that the network's output is unchanged but the semantic quality is largely different, which they call an invariance-based adversary.
 Our proposed framework is consistent with this idea and we provide an alternative perspective for excessive invariance.
+
+The works of Kos et al. \citeyearpar{kos2018adversarial} and Goodfellow et al. \citeyearpar{goodfellow2014explaining} demonstrate the ability to produce adversarial examples for pointwise-nonlinear generative models that have applications in image denoising.
+We would expect generative models to preserve information from their inputs and therefore be less susceptible to adversarial attacks.
+Additionally, it has been suggested that denoising in general should help with robustness.
+This work suggests a more nuanced explanation of adversarial susceptibility.
+
 It will always be possible to produce an image perturbation that results in a change in class label, or an alternate reconstruction.
 The academic interest in the subject comes from observations of how small that perturbation can be and the (lack of) semantic content of the perturbation.
 Following the intuition provided in \parencite{ford2019adversarial}, successful defenses appear to require accounting for, or at a minimum detecting, distributional shift from the training data.
@@ -359,11 +352,8 @@ Instead, we can estimate adversarial perturbation directions by measuring the is
 Figure \ref{fig:ch4_adv_grads} shows schematic drawings of the contours measured for population- and pointwise-nonlinear neurons along with the expected adversarial directions.
 
 \begin{figure}
-    %\vskip -0.05in
-    \begin{center}
-    \centerline{\includegraphics[width=0.45\columnwidth]{figures/adversarial_gradients_iso_contours.png}}
-    \end{center}
-    %\vskip -0.3in
+    \centering
+    \includegraphics[width=0.3\columnwidth]{figures/adversarial_gradients_iso_contours.png}
     \caption{\textbf{Schematic description of adversarial attacks relative to iso-response contours.} Adversarial gradients (dark arrows) are always orthogonal to the iso-response contours (blue dashed line).$\Phi_{k}$ indicates a weight vector for the neuron $a_{k}$, and $v$ represents a random orthogonal direction.}
     \label{fig:ch4_adv_grads}
 \end{figure}
@@ -403,7 +393,6 @@ However, even the bounded sigmoid network produced noisy adversarial images with
 Deep networks can approximate complex functions if they have enough training data. Therefore, it is reasonable to expect a deep network to learn to produce exo-origin bent iso-response contours from neurons in its latent space if efficiency or selectivity is a primary goal of the model. To test this, we trained a deep rectified bottleneck autoencoder and measured its iso-response curvature as well as its susceptibility to single-unit untargeted adversarial attacks. The autoencoder is trained to produce high quality reconstructions (approximately matched to the LCA) while communicating the information through a restricted channel of 64 neurons, which should encourage an efficient representation. We were unable to train a deep architecture with a sigmoid activation that learned structured weights for comparison. Figure \ref{fig:ch4_drae_curvature} shows that the autoencoder learns both exo- and endo-origin curvatures, which makes the quality of adversarial attacks less easy to predict. To produce the curvature plots, we had to select a relevant image plane for the target neuron. Following the methods outlined in \parencite{mahendran2016visualizing}, we used gradient ascent to find an optimal stimulus for a given latent neuron. We then followed the same procedure as outlined for figure \ref{fig:ch4_iso_contours} with the neurons' optimal stimuli as our target and comparison vectors.
 
 % TODO: Get histogram plot
-% more important TODO: fix (delete) tiny little text
 \begin{figure}
     \centering
     \includegraphics[width=0.5\textwidth]{figures/drae_deep_curvature.png}
@@ -442,11 +431,9 @@ In section \ref{sec:ch4_adv_defense}, we proposed that adversarial gradient dire
 
 %TODO: Verify this plot
 \begin{figure}[h]
-    %\vskip -0.05in
     \begin{center}
-    \centerline{\includegraphics[width=\columnwidth]{figures/cosyne_similarity.png}}
+    \centerline{\includegraphics[width=0.9\textwidth{figures/cosyne_similarity.png}}
     \end{center}
-    %\vskip -0.3in
     \caption{\textbf{Adversarial attacks using gradients from the LCA have a larger cosine similarity to dataset images than attacks for the SAE.} Following \parencite{kos2018adversarial, kurakin2016adversarial}, we attacked each model using a target image that had an alternate class label. The histograms are computed over 800 image examples.}
     \label{fig:ch4_cosine_similarity}
 \end{figure}
@@ -472,7 +459,7 @@ In addition to being data-aligned, we found that the sigmoid nonlinearity in par
 %The standard attack method for classification networks is to perturb input pixels to result in misclassification. One proposed defense against this type of attack is to preprocess the image pixels with a denoising autoencoder that would produce reconstructions void of the adversarial pixel perturbations. However, it has been shown that if one backpropagates the adversarial loss through the autoencoder network, then it is still possible to adversarially attack the network. Here we show that the LCA model outperforms the VAE and SAE networks as a preprocessing ``firewall'' against the adversarial attacks.
 
 \subsubsection{Replacing the first layer of an MLP with an LCA layer boosts robustness}
-In chapter \ref{ch:iso} we discussed potential benefits of using LCA as an unsupervised training method for semi-supervised classification tasks.
+In chapter 3 we discussed potential benefits of using LCA as an unsupervised training method for semi-supervised classification tasks. %TODO: Fix chapter refs
 Here, we show that the same network setup as we described in section \ref{sec:ch3_weak_supervised_learning} has additional robustness to adversarial attacks.
 Although we did not include feedback during inference in our adversarial experiments, we do identify this as a promising direction for future work.
 In this experiment we first trained a two-layer fully-connected ReLU (MLP) model on the MNIST dataset as our control model.
