@@ -3,18 +3,17 @@
 %TODO:
 % Lessons learned
 % a little more visionary
-% unify it more
+% unify the thesis
+% what is the grand new direction to take it
 \section{General Conclusions}\label{sec:ch5_summary}
 In this thesis we present the Locally Competitive Algorithm as a model for computation in V1.
 While other works \parencite{zhu2013visual,olshausen1997sparse,vinje2000sparse} have demonstrated that the LCA matches well with response properties of V1 simple cells and population activity, here we dig deeper in to the actual model computation to better understand it and expand on it.
 Lateral connectivity is a core component of the LCA and allows for population nonlinear interactions that facilitate an explaining-away property when encoding natural stimulus.
 We argue that this type of connectivity, which is also ubiquitous in neural circuits, is highly beneficial for biologically relevant and machine learning relevant tasks.
-We show that sparse inference produces more a more efficient, robust, and selective encoding over networks without lateral connectivity and recurrence.
 We demonstrate that the LCA can be expanded to produce hierarchical representations, and present several promising directions for future work in this direction.
+We then show that sparse inference produces more a more efficient, robust, and selective encoding over networks without lateral connectivity and recurrence.
 Our hope is that a detailed analysis of the model will demystify its complexity and encourage computational neuroscientists to abandon the normative pointwise linear/nonlinear neuron models in favor of those with population nonlinear interactions and dynamic inference.
 
-%TODO:
-% what is the grand new direction to take it
 \section{Future work}\label{sec:ch5_future_work}
 We alluded to many promising directions for future work.
 In chapter 1, we noted that there are many important brain processing areas that are largely ignored in the sparse coding model. %TODO: Fix chapter refs
@@ -27,17 +26,17 @@ Ratnam et al. \citeyearpar{ratnam2017benefits} and Burak et al. \citeyearpar{bur
 Olshausen et al. \citeyearpar{olshausen1993neurobiological} proposes a dynamic routing theory for computation in the thalamus.
 These models can be combined with models of coding in V1 to produce a more holistic account of early vision, which we identify as an exciting area of research.
 
-In chapter 2 we noted that deriving a fully-connected variant of the LCA would be a valuable contribution \parencite{le2011building, ngiam2010tiled}. %TODO: Fix chapter refs
-We believe this type of connectivity provides for a good trade-off between the faster-but-constrained convolutional connectivity and the slower-but-unconstrained fully-connected connectivity.
+In chapter 2 we noted that deriving a locally-connected variant of the LCA would be a valuable contribution \parencite{le2011building, ngiam2010tiled}. %TODO: Fix chapter refs
+We believe this type of connectivity provides for a good trade-off between the faster-but-constrained convolutional models and the slower-but-unconstrained fully-connected models.
 
-In chapter 3 we proposed a hierarchical model for producing invariant representations of natural scenes and we provide promising steps towards the model. %TODO: Fix chapter refs
+In chapter 3 we proposed a hierarchical model for producing invariant representations of natural scenes and we provide promising steps towards the achieving model. %TODO: Fix chapter refs
 Modifying the hierarchical ICA model proposed in \parencite{karklin2003learning} using a similar derivation as what was used for our proposed subspace LCA network would be a valuable contribution in that it would allow us to more effectively explore how overcompleteness and recurrent inference influences the learned representations and coding properties.
 We also proposed a semi-supervised learning framework for extending the LCA.
 We identified several areas of future work, namely how feedback influences inference and learning, how the depth of the classifier influences inference and learning, as well as making comparisons to alternative methods.
 In the next section we proposed the subspace LCA.
 We are currently working on drawing comparisons to independent subspace analysis \parencite{hyvarinen2000emergence}.
 We think extending the model to a topographic variant and incorporating dynamic routing ideas \parencite{olshausen1993neurobiological} are promising future directions.
-We are also interested in combining the subspace LCA network and the weakly-supervised objectives defined in sections \ref{sec:ch3_weak_supervised_learning} and \ref{sec:ch3_subspace_lca}, respectively.
+We are also interested in combining the subspace LCA network and the weakly-supervised objectives defined in sections \ref{sec:ch3_weak_supervised_learning}.
 
 In chapter 4 we describe and extend a method for geometrically describing the selectivity and invariance of neurons. %TODO: Fix chapter refs
 We measured selectivity to changing orientation for various neuron models, but, as we outlined in chapter 2, the LCA learns receptive fields that also tile spatial frequency and position. %TODO: Fix chapter refs
