@@ -6,8 +6,8 @@ Sparse coding is a generative model for explaining natural signals. In other wor
 \section{A probabilistic approach for image coding}
 As was explained in chapter 1, the signal coming from the two-dimensional retina is incomplete and the problem of inferring the exact three-dimensional structure of the world from that signal is impossible. % TODO: Fix chapter ref
 However, some solutions are more likely than others and ecological pressure encourages brains to perceive highly likely solutions.
-If population activity in the brain represents possible hypotheses about the world, then we want to model it in a probabilistic, Bayesian framework.
-In this section, we derive such a framework and shows that sparse coding approximately solves it.
+If population activity in the brain represents possible hypotheses about the world, then we want to model the brain in a probabilistic, Bayesian framework.
+In this section, we derive such a framework and show that sparse coding approximately solves it.
 
 We aim to encode an incoming signal efficiently under the assumption that the signal is composed of structured components and unstructured additive noise. We do this with sparse coding, which assumes a linear generative model:
 
@@ -17,80 +17,87 @@ We aim to encode an incoming signal efficiently under the assumption that the si
 
 \noindent where $s$ is our input signal, $\Phi$ is an overcomplete (in that the number of columns in $\Phi$ is greater than the number of rows) dictionary of functions, $a$ is a row vector of activation coefficients, and $\varepsilon$ is Gaussian noise (which we justify below). For a given input signal, we must solve the ill-posed task of inferring an optimal set of coefficients. The problem is difficult in part because the noise is unknown and therefore cannot be completely accounted for. Another reason is that the dictionary is overcomplete and thus non-orthogonal, resulting in an infinite number of possible combinations that are each equally valid representations. Following the works of Olshausen and colleagues \parencite{olshausen1996learning, olshausen2003principles, karklin1999porbabilistic}, we will derive a probabilistic generative model for computing image codes. Additionally, we can follow a similar derivation to learn a dictionary that maximizes coding efficiency. This gives us a principled and extendable foundation from which we can derive sparse coding and similar models.
 
-Our model assumes a prior probability over the images, $p(s)$, and the activity coefficients, $p(a)$. We also assume that the coefficient prior does not depend on the dictionary itself; that is $p(a|\Phi) = p(a)$. Although in practice the coefficients and dictionary will be jointly optimized, we can adhere to this last assumption by fixing one variable while optimizing the other in an expectation-maximization-like procedure. We specify the likelihood of an image under the model for a given state of coefficients as $p(s|a,\Phi)$. Conversely, given evidence in the form of an image sample, we can define the posterior as the conditional probability distribution of our coefficients given the image and model: $p(a|s,\Phi)$. Our goal is to maximize this posterior distribution, which gives us the most probable estimate of the coefficients. As is done in \parencite{karklin1999porbabilistic}, we can relate the likelihood and posterior using Bayes' rule:
+
+\subsection{Inference}
+Our model assumes a prior probability over the activity coefficients, $p(a)$. We also assume that the coefficient prior does not depend on the dictionary itself; that is $p(a|\Phi) = p(a)$. Although in practice the coefficients and dictionary will be jointly optimized, we can adhere to this last assumption by fixing one variable while optimizing the other in an expectation-maximization-like procedure. We specify the likelihood of an image under the model for a given state of coefficients as $p(s|a,\Phi)$. Conversely, given evidence in the form of an image sample, we can define the posterior as the conditional probability distribution of our coefficients given the image and model: $p(a|s,\Phi)$. Our goal is to maximize this posterior distribution, which gives us the most probable estimate of the coefficients. As is done in \parencite{karklin1999porbabilistic}, we can relate the likelihood and posterior using Bayes' rule:
 
 \begin{equation}\label{eq:ch2_bayes}
-    p(a|s,\Phi) \propto p(s|a,\Phi) p(a)
+    p(a|s,\Phi) \propto p(s|a,\Phi) p(a),
 \end{equation}
 
-We model the noise distribution as Gaussian, which we justify by assuming that the generative model can account for everything except for random, uncorrelated (i.e. independent) causes that combine in the limit to follow a Gaussian distribution. Under this assumption, we can specify the probability density function for our image likelihood:
+\noindent where we use $\propto$ to indicate that we are ignoring the image probability because it does not affect inference or learning. We model the noise distribution as Gaussian, which we justify by assuming that the generative model can account for everything except for random, uncorrelated (i.e. independent) causes that combine in the limit to follow a Gaussian distribution. Under this assumption, we can specify the log probability density function (up to additive constants) for our image likelihood:
 
 \begin{equation}\label{eq:ch2_image_likelihood}
-    p(s|a,\Phi) \propto e^{-\frac{1}{2\sigma_{n}^{2}}|s-\phi a|^{2}},
+    \log p(s|a,\Phi) = -\frac{1}{2\sigma_{\text{n}}^{2}}\|s-\phi a\|^{2} + c,
 \end{equation}
 
-\noindent where $\sigma_{n}$ is the standard deviation of the additive noise. Our goal is to encode the images as efficiently as possible. To do this, we impose a factorial (i.e. independent) prior on the coefficients that is highly peaked at 0, which encourages most of the neurons to be silent for any given input signal. If we assume that the mean of the image distribution exists at $\Phi a$, then the probability density function for our coefficient prior to be a maximum entropy distribution (with infinite variance) is the following Laplacian:
+\noindent where $\sigma_{\text{n}}$ is the standard deviation of the additive noise. We will later drop the additive constants, $c$, as they do not effect inference or learning. Our goal is to encode the images as efficiently as possible. To do this, we impose a factorial (i.e. independent) prior on the coefficients that is highly peaked at 0, which encourages most of the neurons to be silent for any given input signal. We assume that our activations, $a$, are independent and positive-only with finite mean. The maximum entropy distribution for such a random variable is a one-sided Laplacian, with log probability density
 
-% TODO: This sigma corresponds to the scale of the coefficients, not the same sigma as in the data. Just use lambda, say it is proportional to the variance. It should multiply the activation
 \begin{equation}\label{eq:ch2_coefficient_prior}
-    p(a) \propto \prod_{i}\frac{1}{\lambda} e^{\frac{-|a_{i}|}{\lambda}},
+    \log p(a) = -\lambda\sum_{i}|a_{i}| + c,
 \end{equation}
 
-%TODO:
-%we're also assuming a Gaussian prior on the basis functions
-% it's not from noise assumption
-% move this down to where we derive the weight update rule
-% in practice we approximate this prior by forcing the basis functions to be unit length after each update step, which is akin to projected gradient descent
-\noindent where $\lambda = \tfrac{1}{\sigma^{2}}$. Finally, our Gaussian noise assumption also requires us to impose an $l_{2}$ prior on the pixel dimension of the dictionary:
-
-\begin{equation}\label{eq:ch2_dictionary_prior}
-    p(\Phi_{i}) \propto \frac{1}{\sqrt{2\pi}\sigma^{2}}e^{\frac{-\sum_{j}|\Phi_{i,j}|^{2}}{\sigma^{2}}}.
-\end{equation}
-
-Now that we have densities for our probabilities, we can write down the log-likelihood of our model, which we will later define as the negative of the sparse coding energy function:
+\noindent where $\lambda$ is the inverse of the mean. Now that we have densities for our log probabilities, we can write down the log-likelihood of our model up to additive constants, $L$, which we will later define as the negative of the sparse coding energy function:
 
 \begin{align}\label{eq:ch2_log_likelihood}
 \begin{split}
     L &= \log\left(p(s|a,\Phi)p(a)\right) \\
       &= \log{p(s|a,\Phi)} + \log{p(a}) \\
-      &= -\frac{\lambda}{2}|s - \Phi a|^{2} - \sum_{i}|a_{i}|.
+      &= -\frac{1}{2\sigma_{\text{n}}^{2}}\|s - \Phi a\|^{2} - \lambda \sum_{i}|a_{i}|.
 \end{split}
 \end{align}
 
-In the final step we dropped a constant term that is equal to a product of the number of neurons and $\lambda$. Ideally, we would like to maintain a distribution of probable coefficients for a given image and model. However, we will only store the most likely coefficients using a maximum a-posteriori (MAP) estimate, which we justify by assuming that the distribution is highly peaked and therefore the maximum of the distribution is the most probable and a decent estimate of the mean. To estimate the most likely coefficients we can maximize their posterior given the data and model by finding a minimum of the negative log-likelihood:
+As we said earlier, we wish to maximize the posterior distribution to infer a sparse code. That is, we wish to do a maximum a-posteriori (MAP) estimate. To do this we can find a minimum of the negative log-likelihood:
 
 \begin{align}\label{eq:ch2_min_log_likelihood}
 \begin{split}
-    \max_{a} p(a|s,\Phi) &= \max_{a}\left[\log{p(s|a,\Phi)} + \log{p(a)}\right] \\
-                         &= \min_{a}\frac{\lambda}{2}|s - \Phi a|^{2} + \sum_{i}|a_{i}|.
+    \hat{a} = \max_{a} p(a|s,\Phi) &= \max_{a}\left[\log{p(s|a,\Phi)} + \log{p(a)}\right] \\
+                         &= \min_{a}\frac{1}{2\sigma_{\text{n}}^{2}}\|s - \Phi a\|^{2} + \lambda \sum_{i}|a_{i}|.
 \end{split}
 \end{align}
 
-The probability of the image under the model, $p(s|\Phi)$ is obtained by marginalizing over the activations:
+\subsection{Learning}
+The probability of the image under the model, $p(s|\Phi)$, is obtained by marginalizing over the activations:
 
-%TODO: da not partial a
 \begin{equation}\label{eq:ch2_image_probability}
-    p(s|\Phi) = \int p(s|a,\Phi) p(a) \partial a 
+    p(s|\Phi) = \int p(s|a,\Phi) p(a) da.
 \end{equation}
 
-If we wish to find the optimal dictionary, then we would again want to maximize the log of equation \eqref{eq:ch2_image_probability}. However, it is not tractable to integrate over the coefficients to find the marginals, so instead we use a MAP estimate. This is a fair estimate if the model is sure of the posterior, that is to say that $p(a|s,\Phi)$ truly follows a highly peaked distribution with heavy tails (i.e. the distribution has high kurtosis). Given this assumption, we define the log of the probability of the image under the model:
+To find the optimal dictionary, we have to maximize the model posterior. This is equal to the image likelihood times the weight prior and tells us how good our model is given some data samples:
 
-\begin{equation}\label{eq:ch2_log_image_probability}
-    \log{p(s|\Phi)} = \log{\int p(s|a,\Phi)p(a)\partial a},
+\begin{equation}\label{eq:ch2_dictionary_posterior}
+  p(\Phi|s) \propto p(s|\Phi)p(\Phi).
 \end{equation}
 
-\noindent and take the gradient with respect to our weights to give us a weight update rule:
+We impose an $l_{2}$ prior on the pixel dimension of the dictionary, which we write down as a log density:
 
-% TODO: add in explanation of where terms on the right come from.
-\begin{equation}\label{eq:ch2_probability_weight_update}
-    \nabla_{\Phi} \log{p(s|\Phi)} = \left< \left[s - \Phi a\right]a^{\top}\right>_{p(a|s,\Phi)}.
+\begin{equation}\label{eq:ch2_dictionary_prior}
+    \log p(\Phi_{i}) = -\frac{1}{2\sigma_{\Phi}^{2}}\sum_{i}\|\Phi_{i}\|^{2} + c,
 \end{equation}
 
-% p(phi|s) is posterior, which is what we really want to find. add weight decay term
-% Expectation exactly comes from integral
-% usually people will do this with a monte-carlo type process
-% instead of sampling from the coefficients a to integrate over the entire state space (or close to), we will take a single sample in the form of the MAP estimate.
-The expectation in equation \eqref{eq:ch2_probability_weight_update} tells us that we must do inference under the posterior. As we will see in the following section, the learning and inference rules can be derived directly from the same energy function, which is the negative of equation \eqref{eq:ch2_log_likelihood}. Then we will make a simple change to the inference rule to define the LCA. Finally, we will verify some known properties of sparse coding on natural images and derive comparisons to similar models.
+\noindent where $\sigma_{\Phi}^{2}$ is proportional the expected pixel variance of the individual weight vectors and the sum penalizes each weight individually. We've now defined our entire log posterior:
+
+\begin{equation}\label{eq:ch2_log_probability_weight_complete}
+    \log{p(\Phi|s)} = \log p(\Phi) + \log \int p(s|a,\Phi)p(a)da,
+\end{equation}
+
+\noindent where the integral tells us that we want to do inference. Ideally, we would like to maintain a distribution of probable coefficients for a given image and model. However, to do this exactly is intractable and so is sampling from the coefficients to approximate the integral. Instead, we will again use a MAP estimate, which is a good approximation if the model is sure of the posterior. That is to say that $p(a|s,\Phi)$ truly follows a highly peaked distribution with heavy tails (i.e. the distribution has high kurtosis). This gives us
+
+\begin{align}\label{eq:ch2_log_probability_weight_approx}
+\begin{split}
+    \log{p(\Phi|s)} &= \log p(\Phi) + \log \int p(s|a,\Phi)p(a)da \\
+    &\approx \log p(s|\hat{a},\Phi)+ \log p(\hat{a}) + \log p(\Phi)  \\
+    &= -\frac{1}{2\sigma_{\text{n}}^{2}}\|s-\Phi \hat{a}\|^{2} - \lambda \sum_{i}|\hat{a}_{i}| - \frac{1}{2\sigma_{\Phi}^{2}}\sum_{i}\|\Phi_{i}\|^{2},
+\end{split}
+\end{align}
+
+\noindent where $\hat{a}$, as above, is a MAP estimate of the posterior. Now we can take the gradient with respect to our model to get the weight update:
+
+\begin{equation}\label{eq:ch2_log_probability_weight_grad}
+    \nabla_{\Phi} \log{p(\Phi|s)} &\approx \frac{1}{\sigma_{\text{n}}^{2}}[s-\Phi \hat{a}]\hat{a}^{\top} - \frac{1}{\sigma_{\Phi}^{2}}\|\Phi\|
+\end{equation}
+
+As we will see in the following section, the learning and inference rules can be derived directly from the same energy function, which is the negative of equation \eqref{eq:ch2_log_likelihood}. In practice, instead of imposing a prior on the weights, we will force them to have unit $l_{2}$ norm by normalizing them after each weight update. This ends up being equivalent to doing projected gradient descent on the energy function. From this point we can make a simple change to the inference rule to define the LCA. Finally, we will discuss some important variants to the LCA, analyze the network trained on natural images, and derive comparisons to similar models.
 
 
 \section{Sparse coding}
@@ -105,7 +112,7 @@ For an $N$-dimensional input signal (e.g. an $N$ pixel image), $s \in \mathbb{R}
         \overbrace{ \lambda \sum\limits_{i=1}^{M}C(a_{i}) }^\text{Limit Activations} \right),
 \end{equation}
 
-\noindent where $\hat{s} = \sum\limits_{i=1}^{M}\Phi_{i}a_{i}$ is the image reconstruction, $\argmin\limits_{a, \Phi}$ tells us that we want to minimize the energy with respect to both the activations and the dictionary, and $||\cdot||_2^2$ indicates the squared $l_2$ norm. In this energy function, we use $\lambda$ as a trade-off parameter between the reconstruction quality and the sparsity constraint. Note that we have performed a change of variables from the previous section, to include the noise variance, $\sigma$ into a new $\lambda$ parameter that now modulates the $l_{1}$ cost as a Lagrange multiplier. In practice we tune it to maximize network sparsity for a minimum accepted reconstruction quality. One popular choice for the cost function, $C(\cdot)$, is the $l_{1}$ cost penalty, which is the sum of the absolute value of all activations:
+\noindent where $\hat{s} = \sum\limits_{i=1}^{M}\Phi_{i}a_{i}$ is the image reconstruction, $\argmin\limits_{a, \Phi}$ tells us that we want to minimize the energy with respect to both the activations and the dictionary, and $||\cdot||_2^2$ indicates the squared $l_2$ norm. In this energy function, we use $\lambda$ as a trade-off parameter between the reconstruction quality and the sparsity constraint. Note that we have performed a change of variables from the previous section, to include the noise variance, $\sigma_{\text{n}}$ into a new $\lambda$ parameter that now modulates the $l_{1}$ cost as a Lagrange multiplier. In practice we tune it to maximize network sparsity for a minimum accepted reconstruction quality. One popular choice for the cost function, $C(\cdot)$, is the $l_{1}$ cost penalty, which is the sum of the absolute value of all activations:
 
 \begin{equation}\label{eq:ch2_l1_cost}
   \sum\limits_{i=1}^{M}C(a_{i}) = \sum\limits_{i=1}^{M}|a_{i}|.
@@ -120,11 +127,11 @@ The Locally Competitive Algorithm (LCA) is a method for computing a sparse code 
 \begin{figure}[h]
     \centering %center using container as reference, instead of the whole text
     \includegraphics[width=0.4\textwidth]{figures/lca_diagram.png}
-    \caption{\textbf{LCA architecture.} The LCA network includes feedforward driving connections, $\Phi$ as well as a lateral connectivity matrix, $G$. The dark arrows are connections for neuron $k$. All other connections are denoted by dotted lines.}
+    \caption{\textbf{LCA architecture.} The LCA network includes feedforward driving connections, $\Phi$ as well as a lateral connectivity matrix, $G$. The input, $s$, is a vector of pixels, which is the lower row of black dots. The neurons are the upper row of black dots and have internal states, $u$. The dark arrows are connections for neuron $k$. All other connections are denoted by dotted lines.}
     \label{fig:ch2_lca_diagram}
 \end{figure}
 
-We wish for our neuron activations to minimize the energy function described in equation \eqref{eq:ch2_sparse_energy}. This will be accomplished via gradient descent on the energy function. To illustrate the derivative, we first express the energy function in subscript notation:
+We wish for our neuron activations to minimize the energy function described in equation \eqref{eq:ch2_sparse_energy}. This will be accomplished via gradient descent. To illustrate the derivative, we first express the energy function in subscript notation:
 
 \begin{equation}\label{eq:ch2_subscript_sparse_energy_func}
     E(t) = \tfrac{1}{2} \sum\limits_{i=1}^{N} \left[ s_{i} - \sum\limits_{j=1}^{M}a_{j}(t) \Phi_{i,j} \right]^{2} + \lambda \sum\limits_{j=1}^{M} C(a_{j}(t))
@@ -155,7 +162,7 @@ We constrain the model to have unit norm dictionary elements in the pixel dimens
     \lambda \frac{\partial C(a_{k}(t))}{\partial a_{k}(t)}
 \end{equation}
 
-$E(t)$ and $a(t)$ both vary in time, but in future sections we will drop the time variable to improve the equation readability. In this scenario, we can imagine a constant input signal, $s$, and a constant set of dictionary elements, $\Phi$. Given these constants, we want the system to evolve over time to produce an optimal set of activations, $a$. Equation \eqref{eq:ch2_subscript_sparse_energy_func} gives us the energy at each time point during this inference process. Each neuron has a corresponding dictionary element, $\phi_{k}$, which is a vector that indicates the connection strength to each pixel in the input. In the literature this is also referred to as the strength of the synaptic connections between the neuron and each input pixel, or the neuron's feed-forward receptive field. In this model, we are going to find a sparse code for each individual image patch, so all $M$ neurons will be connected to the same image patch, $s$ (i.e. the model is ``fully-connected''). The model neuron has a driving excitatory input, which we will denote $b_{k} = S\phi_{k} = \sum_{i=1}^{N}s_{i} \Phi_{i,k}$. This is the projection of the input image onto the neuron's corresponding dictionary element. The stronger the similarity between the input, $s$, and the dictionary element, $\phi_{k}$, the stronger the driving excitatory input. Each neuron also receives inhibition from every other active neuron. The magnitude of inhibition is partially set by an $M \times M$ Gramian matrix, $G$. The matrix evaluates to the inner product of the each neuron's dictionary element with all other neurons' dictionary elements, $G = \Phi^T\Phi$, such that each element in $G$ gives the overlap in pixel space between two dictionary elements, $G_{i,j} = \sum\limits_{n=1}^{N} \Phi_{n,i}\Phi_{n,j}$. The total inhibition onto a neuron is also scaled by how active the inhibiting neuron is.
+$E(t)$ and $a(t)$ both vary in time, but in future sections we will drop the time variable to improve the equation readability. In this scenario, we can imagine a constant input signal, $s$, and a constant set of dictionary elements, $\Phi$. Given these constants, we want the system to evolve over time to produce an optimal set of activations, $a$. Equation \eqref{eq:ch2_subscript_sparse_energy_func} gives us the energy at each time point during this inference process. Each neuron has a corresponding dictionary element, $\phi_{k}$, which is a vector that indicates the connection strength to each pixel in the input. In the literature this is also referred to as the strength of the synaptic connections between the neuron and each input pixel, or the neuron's feed-forward receptive field. In this model, we are going to find a sparse code for each individual image patch. Additionally, all $M$ neurons will be connected to the same image patch, $s$ (i.e. the model is ``fully-connected''). The model neuron has a driving excitatory input, which we will denote $b_{k} = S\phi_{k} = \sum_{i=1}^{N}s_{i} \Phi_{i,k}$. This is the projection of the input image onto the neuron's corresponding dictionary element. The stronger the similarity between the input, $s$, and the dictionary element, $\phi_{k}$, the stronger the driving excitatory input. Each neuron also receives inhibition from every other active neuron. The magnitude of inhibition is partially set by an $M \times M$ Gramian matrix, $G$. The matrix evaluates to the inner product of the each neuron's dictionary element with all other neurons' dictionary elements, $G = \Phi^T\Phi$, such that each element in $G$ gives the overlap in pixel space between two dictionary elements, $G_{i,j} = \sum\limits_{n=1}^{N} \Phi_{n,i}\Phi_{n,j}$. The total inhibition onto a neuron is also scaled by how active the inhibiting neuron is.
 
 Next, we define a new function that maps the activity for a neuron and the sparsity cost function to a scalar. This function can be thought of as the self inhibition that increases as the value of $a_{k}$ increases:
 
@@ -172,7 +179,7 @@ Self inhibition imposes sparsity by penalizing the neurons own output, which is 
     f_{\lambda}(a_{k}(t)).
 \end{equation}
 
-At this point we could update $a(t)$ using gradient descent following equation \eqref{eq:ch2_lca_deda_simple} to produce a sparse code from an input signal. A more biologically consistent solution would be to have the model neuron maintain an internal state, analogous to a biological neuron's membrane potential. The model neuron could then only produce output when its membrane potential exceeded some threshold. This has better correspondence to biology and it gives the neurons sub-threshold dynamics that influences their activity (see section \ref{sec:ch2_lca_properties}) when compared to directly using equation \eqref{eq:ch2_lca_deda_simple}. Following this logic, Rozell et al. \citeyearpar{rozell2008sparse} define an internal state variable, $u_{k}(t)$ that represents the membrane potential for neuron $k$ at time $t$. When a neuron's potential climbs above some threshold, it communicates in the form of an activation, $a_{k}(t)$, which is analogous to a spike rate\footnote{Neuroscientists often use the spike rate, or number of spikes per fixed unit of time, as a measure of the overall activity of a neuron. The LCA is not a spiking network, but when comparing to biological neurons (e.g. in the work by \cite{zhu2013visual}) we make a direct analogy between the activity of the LCA neuron and the biological neuron's spike rate. Spiking versions of sparse coding have been explored by \parencite{zylberberg2011sparse, olshausen2003learning}.}. Only these excited neurons can contribute to the image code and reconstruction. Ultimately, the network of neurons should still descend the energy function from equation \eqref{eq:ch2_subscript_sparse_energy_func}, so we define the neuron's state dynamics to be governed by the following equation:
+At this point we could update $a(t)$ using gradient descent following equation \eqref{eq:ch2_lca_deda_simple} to produce a sparse code from an input signal. However, a more biologically consistent solution would be to have the model neuron maintain an internal state, analogous to a biological neuron's membrane potential. The model neuron could then only produce output when its membrane potential exceeded some threshold. This has better correspondence to biology and it gives the neurons sub-threshold dynamics that influences their activity (see section \ref{sec:ch2_lca_properties}) when compared to directly using equation \eqref{eq:ch2_lca_deda_simple}. Following this logic, Rozell et al. \citeyearpar{rozell2008sparse} define an internal state variable, $u_{k}(t)$ that represents the membrane potential for neuron $k$ at time $t$. When a neuron's potential climbs above some threshold, it communicates in the form of an activation, $a_{k}(t)$, which is analogous to a spike rate\footnote{Neuroscientists often use the spike rate, or number of spikes per fixed unit of time, as a measure of the overall activity of a neuron. The LCA is not a spiking network, but when comparing to biological neurons (e.g. in the work by \cite{zhu2013visual} and in section \ref{sec:ch4_selectivity_efficiency}) we make a direct analogy between the activity of the LCA neuron and the biological neuron's spike rate. Spiking versions of sparse coding have been explored by \parencite{zylberberg2011sparse, olshausen2003learning}.}. Only these excited neurons can contribute to the image code and reconstruction. Ultimately, the network of neurons should still descend the energy function from equation \eqref{eq:ch2_subscript_sparse_energy_func}, so we define the neuron's state dynamics to be governed by the following equation:
 
 \begin{align}\label{eq:ch2_u_dot}
 \begin{split}
@@ -200,7 +207,7 @@ This gives us the LCA neuron update equation:
     \dot{u_{k}}(t) = \frac{1}{\tau} \left[\overbrace{b_{k}}^\text{Driving excitation} - \overbrace{\sum_{m \neq k}^{M}G_{k,m}a_{m}(t)}^\text{Lateral Inhibition} - \overbrace{u_{k}(t)}^\text{Leak} \right],
 \end{equation}
 
-\noindent or equivalently:
+\noindent or equivalently
 
 \begin{displaymath}
     \tau \dot{u_{k}}(t) + u_{k}(t) =  b_{k} - \sum_{m \neq k}^{M}G_{k,m}a_{m}(t).
@@ -212,7 +219,7 @@ When the neuron's membrane potential passes over a threshold, defined by $T_{\la
   a_{k}(t) = T_{\lambda}(u_{k}(t)).
 \end{equation}
 
-For this expression to perform gradient descent on the energy function, $a$ must be a monotonically increasing function of $u$. Rozell et al. \citeyearpar{rozell2008sparse} describe the relationship between the sparseness cost penalty, the neuron activity, and the internal membrane potential via a thresholding function. The thresholding function can take various forms that determine the exact nature of the sparseness penalty. For the $l_{1}$ penalty, we use a soft thresholding function:
+For this expression to perform gradient descent on the energy function, $a$ must be a monotonically increasing function of $u$. Rozell et al. \citeyearpar{rozell2008sparse} describe the relationship between the sparseness cost penalty, the neuron activity, and the internal membrane potential via a thresholding function. The thresholding function can take various forms that determine the exact nature of the sparseness penalty. For the $l_{1}$ penalty, Rozell et al. \citeyearpar{rozell2008sparse} use a soft thresholding function:
 
 \begin{equation}\label{eq:ch2_lca_threshold_func}
     T_{\lambda}(u_{k}(t)) = \left\{
@@ -280,7 +287,7 @@ In patch-based sparse coding, we compute the network overcompleteness by dividin
 % TODO: this paragraph references sec:ch2_alternative_image_coding_models after referencing linear/nonlinear neuron models. I don't currently include a discussion on those models in that section.
 %TODO: note haider et al work and adesnik work at the end of this paragraph
 In their landmark paper, Olshausen and Field \citeyearpar{olshausen1996emergence} show that the sparse coding model learns oriented, band-pass receptive fields.
-These are well matched to fits of the linear approximations of receptive fields of mammalian V1 simple cells obtained via spike-triggered averaging \parencite{vanHateren1998independent}.
+These are well matched to fits of the linear approximations of receptive fields of mammalian V1 simple cells obtained via spike-triggered averaging \parencite{hateren1998independent}.
 They argue that this supports the hypothesis that the V1 neural population encodes visual stimulus using an efficient wavelet-like dictionary.
 This result has been replicated a number of times with various types of sparse coding models \parencite{zylberberg2011sparse, zylberberg2013sparse, rehn2007network}.
 As a followup to this study, \parencite{zhu2013visual} show that the LCA network also exhibits a variety of extra-classical (i.e. non-linear) receptive field effects, including end-stopping, cross-orientation inhibition, and surround suppression.
@@ -324,7 +331,7 @@ Figure \ref{fig:ch2_lca_inference_loss} shows the values of the loss function in
 Notice that the sparse loss starts at zero, indicating that none of the neurons are contributing to the reconstruction.
 At the beginning of inference, all of the neurons with weights that have a non-zero inner product with the input will increase their membrane potential without producing any output and without receiving any inhibition from other neurons.
 It is only after a neuron passes threshold that it starts producing outputs and inhibiting its neighbors.
-These sub-threshold dynamics can result in a better solution than the standard ISTA framework, which turns on all units with a non-zero inner product with the input at the first inference step \parencite{rozell2008sparse}.
+These sub-threshold dynamics can result in a better solution than the standard ISTA framework, which turns on all units that have a non-zero inner product with the input at the first inference step \parencite{rozell2008sparse}.
 
 \begin{figure}[h]
     \centering
@@ -383,9 +390,9 @@ In figure \ref{fig:ch2_lca_norms_and_acc}, we show that the $l_{0}$ sparsity of 
 
 
 \subsection{Predictive coding}
-Here we will draw comparisons between the LCA and the predictive coding model \parencite{rao1999predictive}. The sparse coding encoder is a single layer predictive coding encoder with a linear synthesis function. This is made intuitive by comparing the LCA against the predictive coding model.
+Here we will draw comparisons between the LCA and the predictive coding model \parencite{rao1999predictive}. The LCA encoder is a single layer predictive coding encoder with a linear synthesis function. This is made intuitive by comparing the LCA against the predictive coding model.
 
-The objective of this investigation is to explore the encoding processes for sparse coding and predictive coding assuming that we are given a trained dictionary. In our sparse coding energy function (equation \eqref{eq:ch2_sparse_energy}), we use $\lambda$ as a trade-off penalty between the reconstruction quality and the sparsity constraint. In practice we tune it to maximize network sparsity for a minimum accepted reconstruction quality. In Olshausen and Field, \citeyearpar{olshausen1997sparse}, their choice of cost function, $C(.)$, specified a Cauchy distribution for the prior on $a$:
+The objective of this investigation is to explore the encoding processes for sparse coding and predictive coding assuming that we are given a trained dictionary. In our sparse coding energy function (equation \eqref{eq:ch2_sparse_energy}), we use $\lambda$ as a trade-off penalty between the reconstruction quality and the sparsity constraint. In practice we tune it to maximize network sparsity for a minimum accepted reconstruction quality. In Olshausen and Field \citeyearpar{olshausen1997sparse}, their choice of cost function, $C(.)$, specified a Cauchy distribution for the prior on $a$:
 
 \begin{equation}\label{eq:ch2_cauchy_cost}
   C(a_{i}) = \log(1+a_{i}^{2})
@@ -445,25 +452,25 @@ Comparing equations \eqref{eq:ch2_pc_deda} and \eqref{eq:ch2_sc_deda_rewrite}, o
 
 
 \subsection{ICA}
-Sparse coding and ICA are related algorithms that employ similar linear generative models, but differ critically in their encoding processes. The image code produced by ICA is computed linearly, whereas sparse coding computes the code with a nonlinear inference process. Here we show that this nonlinear encoding process confers a considerable advantage in coding efficiency and orientation selectivity.
+Sparse coding and ICA are related algorithms that employ similar linear generative models, but differ critically in their encoding processes. The image code produced by ICA is computed linearly, whereas sparse coding computes the code with a nonlinear inference process. In section \ref{sec:ch4_selectivity_efficiency}, we show that this nonlinear encoding process confers a considerable advantage in coding efficiency and orientation selectivity.
 
-ICA assumes the generative model:
+ICA assumes the generative model
 
 \begin{equation}\label{eq:ch2_ica_generative_model}
-  \mathbf{s} = \mathbf{\Phi a}
+    s = \Phi a,
 \end{equation}
 
-where $\mathbf{s}$ is an image, $\mathbf{\Phi}$ is a matrix of filters and $\mathbf{a}$ is a vector of activations that represents the neural code \parencite{bell1997independent}. The goal of ICA is to learn a set of statistically independent filters such that the input data can be reconstructed with minimal error. In ICA, the filter matrix is square and full rank and thus invertible. This allows the ICA activations for a given input to be computed directly as:
+\noindent where $\mathbf{s}$ is an image, $\mathbf{\Phi}$ is a matrix of filters, and $\mathbf{a}$ is a vector of activations that represents the neural code \parencite{bell1997independent}. The goal of ICA is to learn a set of statistically independent filters such that the input data can be reconstructed with minimal error. In ICA, the filter matrix is square and full rank and thus invertible. This allows the ICA activations for a given input to be computed directly as:
 
 \begin{equation}
-\mathbf{\hat{a}} = \mathbf{\Phi}^{-1}\mathbf{s}
+    \hat{a} = \Phi^{-1}s
 \end{equation}
 
 During inference, activations are computed with a single, linear, feed-forward operation. The filter matrix is learned via a non-linear, iterative optimization process to accurately reconstruct the input while maximizing the statistical independence of the filters as measured by the joint entropy of the activations. This process results in filters that are optimized for the higher-order statistical structure in natural scenes.
 
 Sparse coding, however, has a highly non-linear encoding process. The overall optimization procedure involves a fast inner loop in which the coefficients are computed for each data vector and a slower outer loop in which the basis functions are adapted to the statistics of the entire dataset. In the inner loop, coefficients are computed considering the prior on their expected distribution. In ICA, however, the prior plays no role in determining the coefficients, but it does still play an important role in the learning the basis functions.
 
-The ICA learning algorithm is simpler and faster than the sparse coding algorithm because the encoding can be computed from the data in a single feedforward pass. The independent component analysis algorithm of Bell and Sejnowski \citeyearpar{bell1997independent} is formally equivalent to maximum likelihood estimation in the case of no noise and a square system (the dimensionality of the output is equal to the dimensionality of the input). It is easy to generalize this to the case when the number of outputs is less than the number of inputs, but harder the other way around. When the number of outputs is greater than the effective dimensionality of the input the extra dimensions of the output will simply drop out \parencite{livezey2016degeneracy, le2011ica}. While this is not as important for blind separation problems where the number of independent sources is less than or equal to the number of mixed signals, it will become a concern in the representation of images, where overcompleteness is a desirable feature \parencite{simoncelli1991shiftable}. The main difference between the Olshausen and Field \citeyearpar{olshausen1996emergence} sparse coding model and the ICA algorithm of Bell and Sejnowski \citeyearpar{bell1997independent} is in the simplifying assumptions they make in order to deal with the intractable integration problem posed by finding the set of basis functions that maximize the likelihood of the inputs given the model defined by those basis functions. Olshausen and Field’s algorithm assumes low-noise and a peaky, unimodal distribution on the joint probability between the image and the sparse code given the model in order to justify evaluating it at the maximum (MAP), whereas Bell and Sejnowski limit the dimensionality of the code to equal the dimensionality of the input, assume no noise, and enforce an orthogonal set of basis functions so that the integral becomes tractable and compute it analytically.
+The ICA learning algorithm is simpler and faster than the sparse coding algorithm because the encoding can be computed from the data in a single feedforward pass. The independent component analysis algorithm of Bell and Sejnowski \citeyearpar{bell1997independent} is formally equivalent to maximum likelihood estimation in the case of no noise and a square system (the dimensionality of the output is equal to the dimensionality of the input). It is easy to generalize this to the case when the number of outputs is less than the number of inputs, but harder the other way around. When the number of outputs is greater than the effective dimensionality of the input the extra dimensions of the output will simply drop out \parencite{livezey2016degeneracy, le2011ica}. While this is not as important for blind separation problems where the number of independent sources is less than or equal to the number of mixed signals, it will become a concern in the representation of images, where overcompleteness is a desirable property \parencite{simoncelli1991shiftable}. The main difference between the Olshausen and Field \citeyearpar{olshausen1996emergence} sparse coding model and the ICA algorithm of Bell and Sejnowski \citeyearpar{bell1997independent} is in the simplifying assumptions they make in order to deal with the intractable integration problem posed by finding the set of basis functions that maximize the likelihood of the inputs given the model defined by those basis functions. Olshausen and Field’s algorithm assumes low-noise and a peaky, unimodal distribution on the joint probability between the image and the sparse code given the model in order to justify evaluating it at the maximum. Bell and Sejnowski limit the dimensionality of the code to equal the dimensionality of the input, assume no noise, and enforce an orthogonal set of basis functions so that the integral becomes tractable and can be analytically computed.
 
 % TODO: BF learned with ICA vs complete LCA ; the LCA is still non-linear encoding when complete.
 
