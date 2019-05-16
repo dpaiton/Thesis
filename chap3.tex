@@ -134,7 +134,7 @@ The second term computes the batch entropy by summing across the batch dimension
 \noindent where $\alpha_{1}$ and $\alpha_{2}$ are tunable loss trade-off parameters. Our LCA inference equation follows the same derivation from equation \eqref{eq:ch2_lca_deda_simple}, with an added term computed from the derivative of the entropy or cross-entropy costs with respect to the activity vector, $a$.
 
 %TODO: add lca update rule / (cross) entropy derivatives from lab book
-%(https://docs.google.com/presentation/d/1Dy_Dy1uSnLC3FEWXczgdKGxSejRUYQmfHnwPtY5LA8Y/edit#slide=id.g12e96bb738_0_211 for cross-entropy) 
+%https://docs.google.com/presentation/d/1Dy_Dy1uSnLC3FEWXczgdKGxSejRUYQmfHnwPtY5LA8Y/edit#slide=id.g12e96bb738_0_211 for cross-entropy 
 
 \subsection{Experiments on MNIST dataset}
 Our fist experiment is to verify that the classifier is able to train using sparse codes as input. Table \ref{tab:ch3_mnist_accuracy} gives the MNIST test accuracy using a fully supervised label set. The LCA model was pre-trained on MNIST without labels and then a single layer perceptron (SLP) classifier was trained on the activity vector, $a$. Our results indicate that the LCA+SLP network out performs the MLP network.

@@ -118,7 +118,7 @@ For an $N$-dimensional input signal (e.g. an $N$ pixel image), $s \in \mathbb{R}
   \sum\limits_{i=1}^{M}C(a_{i}) = \sum\limits_{i=1}^{M}|a_{i}|.
 \end{equation}
 
-Depending on the choice of cost function, solving equation \eqref{eq:ch2_sparse_energy} can be convex or non-convex. For the $l_{1}$ cost, it is convex. Previous work has solved this via alternating projected gradient descent \parencite{olshausen1997sparse} or basis pursuit denoising \parencite{chen2001atomic}. The basis pursuit denoising variant is often accomplished using the iterative shrinkage and thresholding algorithm (ISTA) \parencite{daubechies2004iterative, beck2009fast}. Rozell et al. \citeyearpar{rozell2008sparse} proposed an alternative to ISTA using a neural network following dynamics governed by the energy gradient called the Locally Competitive Algorithm (LCA). The following section explains this alternative in detail. It is also possible to consider an $l_{0}$ like cost, which measures the total number of neurons active and is non-convex. This can be approximately solved by matching pursuit \parencite{davis1997adaptive, rehn2007network, rebollo2002optimized}, or with a particular ``hard thresholded'' variant of the LCA (see section \ref{sec:ch2_lca_properties}).
+Depending on the choice of cost function, solving equation \eqref{eq:ch2_sparse_energy} can be convex or non-convex. For the $l_{1}$ cost, it is convex. Previous work has solved this via alternating projected gradient descent \parencite{olshausen1997sparse} or basis pursuit denoising \parencite{chen2001atomic}. The basis pursuit denoising variant is often accomplished using the iterative shrinkage and thresholding algorithm (ISTA) \parencite{daubechies2004iterative, beck2009fast}. Rozell et al. \citeyearpar{rozell2008sparse} proposed an alternative to ISTA using a neural network following dynamics governed by the energy gradient called the Locally Competitive Algorithm (LCA). The following section explains this alternative in detail. It is also possible to consider an $l_{0}$ like cost, which measures the total number of active neurons and is non-convex. This can be approximately solved by matching pursuit \parencite{davis1997adaptive, rehn2007network, rebollo2002optimized}, or with a particular ``hard thresholded'' variant of the LCA (see section \ref{sec:ch2_lca_properties}).
 
 
 \section{The Locally Competitive Algorithm}\label{sec:ch2_lca}
@@ -248,9 +248,6 @@ In addition to finding a sparse code, we are also interested in learning a set o
 
 \noindent where $\eta$ is the learning rate and $\hat{s}$ is the image reconstruction. To recap, for a given image sample we first find our image code, $a$, for a fixed dictionary, $\Phi$, and then using that code to update the dictionary with equation \eqref{eq:ch2_phi_update}.
 
-% TODO diagrams with math comparing feed-forward network to LCA network?
-%https://docs.google.com/presentation/d/1Vzk_fVGO-ERQDjKWRvzuHpV6YGwUriD6NyJNpf-WbVE/edit#slide=id.g4f9127c786_0_76
-
 \subsection{The Convolutional LCA}
 
 \begin{figure}[h]
@@ -284,17 +281,16 @@ In patch-based sparse coding, we compute the network overcompleteness by dividin
 
 
 \subsection{Postdictions from the LCA}
-% TODO: this paragraph references sec:ch2_alternative_image_coding_models after referencing linear/nonlinear neuron models. I don't currently include a discussion on those models in that section.
 %TODO: note haider et al work and adesnik work at the end of this paragraph
 In their landmark paper, Olshausen and Field \citeyearpar{olshausen1996emergence} show that the sparse coding model learns oriented, band-pass receptive fields.
 These are well matched to fits of the linear approximations of receptive fields of mammalian V1 simple cells obtained via spike-triggered averaging \parencite{hateren1998independent}.
 They argue that this supports the hypothesis that the V1 neural population encodes visual stimulus using an efficient wavelet-like dictionary.
 This result has been replicated a number of times with various types of sparse coding models \parencite{zylberberg2011sparse, zylberberg2013sparse, rehn2007network}.
-As a followup to this study, \parencite{zhu2013visual} show that the LCA network also exhibits a variety of extra-classical (i.e. non-linear) receptive field effects, including end-stopping, cross-orientation inhibition, and surround suppression.
+As a followup to this study, \parencite{zhu2013visual} show that the LCA network also exhibits a variety of non-linear receptive field effects, including end-stopping, cross-orientation inhibition, and surround suppression.
 This is an important finding, as it shows that a single LCA network trained on natural scenes matches many linear and non-linear empirical effects found with biological neurons.
 Most studies of these non-linear effects employ unique models that are extended from the classic linear/non-linear neuron model for each effect found, while Zhu and Rozell are able to demonstrate many effects with a single model.
 In chapter 4 we will argue that these effects result from the explaining away process during sparse inference. %TODO: fix chapter refs
-In \parencite{vinje2000sparse}, the authors find that stimulating the nCRF (non-classical receptive field) with naturalistic stimuli causes pairs of V1 neurons to become more decorrelated in their response.
+In \parencite{vinje2000sparse}, the authors find that stimulating the area outside the classic receptive field (non-classical receptive field, nCRF) with naturalistic stimuli causes pairs of V1 neurons to become more decorrelated in their response.
 They observed ``dramatically increased sparseness'' when stimulating nCRFs, and suggest that a consequence of this ``is increased independence of the responses across cells''.
 
 As we will expand on in chapter 4, the LCA makes explicit predictions about the existence (and necessity) of population non-linearities among V1 neurons, which facilitate unique responses to natural image stimuli. %TODO: Fix chapter refs
@@ -388,6 +384,9 @@ In figure \ref{fig:ch2_lca_norms_and_acc}, we show that the $l_{0}$ sparsity of 
 %\subsection{Autoencoders}
 %Autoencoders as a NN implementation of L/NL neurons.
 
+% TODO diagrams with math comparing feed-forward network to LCA network?
+%https://docs.google.com/presentation/d/1Vzk_fVGO-ERQDjKWRvzuHpV6YGwUriD6NyJNpf-WbVE/edit#slide=id.g4f9127c786_0_76
+
 
 \subsection{Predictive coding}
 Here we will draw comparisons between the LCA and the predictive coding model \parencite{rao1999predictive}. The LCA encoder is a single layer predictive coding encoder with a linear synthesis function. This is made intuitive by comparing the LCA against the predictive coding model.
@@ -424,7 +423,7 @@ where $a^{td} = f\left(\Phi^{1T}a^{1}\right)$ represents the top-down feedback a
  \hat{S} = \sum\limits_{i}^{M}f(\phi_{i}a_{i})
 \end{equation}
 
-If $f(.)$ is the identity function (i.e. $f(a)=a$), then we get the sparse coding reconstruction energy term. Rao and Ballard describe this as a ``lateral inhibition'' model, although the form of synthesis does not actually differentiate between a feedback or lateral inhibition model. In their study, they experiment with both an identity synthesis function, $f(a)=a$, and a hyperbolic tangent synthesis function, $f(a)=tanh(a)$.
+If $f(.)$ is the identity function (i.e. $f(a)=a$), then we get the sparse coding reconstruction energy term. Rao and Ballard describe this as a ``lateral inhibition'' model, although the form of synthesis does not actually differentiate between a feedback or lateral inhibition model. In their study, they experiment with both an identity synthesis function, $f(a)=a$, and a hyperbolic tangent synthesis function, $f(a)=\tanh(a)$.
 
 Again we can take the derivative of equation \eqref{eq:ch2_pc_energy_func} to get our update rule. In \parencite{rao1999predictive} they include a time constant for the iterative update procedure, which we will leave out for clarity.
 
@@ -460,7 +459,7 @@ ICA assumes the generative model
     s = \Phi a,
 \end{equation}
 
-\noindent where $\mathbf{s}$ is an image, $\mathbf{\Phi}$ is a matrix of filters, and $\mathbf{a}$ is a vector of activations that represents the neural code \parencite{bell1997independent}. The goal of ICA is to learn a set of statistically independent filters such that the input data can be reconstructed with minimal error. In ICA, the filter matrix is square and full rank and thus invertible. This allows the ICA activations for a given input to be computed directly as:
+\noindent where $s$ is an image, $\Phi$ is a matrix of filters, and $a$ is a vector of activations that represents the neural code \parencite{bell1997independent}. The goal of ICA is to learn a set of statistically independent filters such that the input data can be reconstructed with minimal error. In ICA, the filter matrix is square and full rank and thus invertible. This allows the ICA activations for a given input to be computed directly as:
 
 \begin{equation}
     \hat{a} = \Phi^{-1}s
